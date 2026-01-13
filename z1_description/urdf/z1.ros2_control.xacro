@@ -37,10 +37,10 @@ https://github.com/UniversalRobots/Universal_Robots_ROS2_Description/blob/rollin
                     <param name="min"> ${joint1_PositionMin} </param>
                     <param name="max"> ${joint1_PositionMax} </param>
                 </command_interface>
-                <command_interface name="effort">
+                <!-- <command_interface name="effort">
                     <param name="min"> -${torqueMax} </param>
                     <param name="max"> ${torqueMax} </param>
-                </command_interface>
+                </command_interface> -->
                 <state_interface name="position" />
                 <state_interface name="velocity" />
                 <state_interface name="effort" />
@@ -51,11 +51,11 @@ https://github.com/UniversalRobots/Universal_Robots_ROS2_Description/blob/rollin
                     <param name="min"> ${joint2_PositionMin} </param>
                     <param name="max"> ${joint2_PositionMax} </param>
                 </command_interface>
-                <command_interface
+                <!-- <command_interface
                     name="effort">
                     <param name="min"> -${torqueMax} </param>
                     <param name="max"> ${torqueMax} </param>
-                </command_interface>
+                </command_interface> -->
                 <xacro:if value="${sim_ignition}">
                     <!-- setting initial position in gazebo -->
                     <state_interface name="position">
@@ -74,10 +74,10 @@ https://github.com/UniversalRobots/Universal_Robots_ROS2_Description/blob/rollin
                     <param name="min"> ${joint3_PositionMin} </param>
                     <param name="max"> ${joint3_PositionMax} </param>
                 </command_interface>
-                <command_interface name="effort">
+                <!-- <command_interface name="effort">
                     <param name="min"> -${torqueMax} </param>
                     <param name="max"> ${torqueMax} </param>
-                </command_interface>
+                </command_interface> -->
                 <xacro:if value="${sim_ignition}">
                     <!-- setting initial position in gazebo -->
                     <state_interface name="position">
@@ -96,10 +96,10 @@ https://github.com/UniversalRobots/Universal_Robots_ROS2_Description/blob/rollin
                     <param name="min"> ${joint4_PositionMin} </param>
                     <param name="max"> ${joint4_PositionMax} </param>
                 </command_interface>
-                <command_interface name="effort">
+                <!-- <command_interface name="effort">
                     <param name="min"> -${torqueMax} </param>
                     <param name="max"> ${torqueMax} </param>
-                </command_interface>
+                </command_interface> -->
                 <state_interface name="position" />
                 <state_interface name="velocity" />
                 <state_interface name="effort" />
@@ -110,10 +110,10 @@ https://github.com/UniversalRobots/Universal_Robots_ROS2_Description/blob/rollin
                     <param name="min"> ${joint5_PositionMin} </param>
                     <param name="max"> ${joint5_PositionMax} </param>
                 </command_interface>
-                <command_interface name="effort">
+                <!-- <command_interface name="effort">
                     <param name="min"> -${torqueMax} </param>
                     <param name="max"> ${torqueMax} </param>
-                </command_interface>
+                </command_interface> -->
                 <state_interface name="position" />
                 <state_interface name="velocity" />
                 <state_interface name="effort" />
@@ -124,10 +124,10 @@ https://github.com/UniversalRobots/Universal_Robots_ROS2_Description/blob/rollin
                     <param name="min"> ${joint6_PositionMin} </param>
                     <param name="max"> ${joint6_PositionMax} </param>
                 </command_interface>
-                <command_interface name="effort">
+                <!-- <command_interface name="effort">
                     <param name="min"> -${torqueMax} </param>
                     <param name="max"> ${torqueMax} </param>
-                </command_interface>
+                </command_interface> -->
                 <state_interface name="position" />
                 <state_interface name="velocity" />
                 <state_interface name="effort" />
@@ -140,10 +140,10 @@ https://github.com/UniversalRobots/Universal_Robots_ROS2_Description/blob/rollin
                         <param name="min"> ${Gripper_PositionMin} </param>
                         <param name="max"> ${Gripper_PositionMax} </param>
                     </command_interface>
-                    <command_interface name="effort">
+                    <!-- <command_interface name="effort">
                         <param name="min"> -${torqueMax} </param>
                         <param name="max"> ${torqueMax} </param>
-                    </command_interface>
+                    </command_interface> -->
                     <state_interface name="position" />
                     <state_interface name="velocity" />
                     <state_interface name="effort" />

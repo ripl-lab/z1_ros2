@@ -73,7 +73,24 @@ def main(args=None):
         np.array([np.pi / 4, 1.0, -1.0, 0.0, 0.0, 0.0]),
         np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
     ])
+    
     rclpy.spin_until_future_complete(node, future)
+    goal_handle = future.result()
+
+    if not goal_handle.accepted:
+        node.get_logger().info("goal rejected")
+        return
+
+    node.get_logger().info("goal accepted")
+
+    result_future = goal_handle.get_result_async()
+    rclpy.spin_until_future_complete(node, result_future)
+    
+    result = result_future.result().result
+    node.get_logger().info(f"result: {result}")
+    
+    node.destroy_node()
+    rclpy.shutdown()
 
 
 

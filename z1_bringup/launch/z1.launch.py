@@ -265,7 +265,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "starting_controller",
-            default_value="torque_controller",
+            default_value="joint_trajectory_controller",
             description="Name of the controller to be started"
         )
     )
