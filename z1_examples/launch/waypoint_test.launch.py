@@ -32,13 +32,15 @@ def launch_setup(context, *args, **kwargs):
 
     nodes_to_start = list()
     sim_ignition = LaunchConfiguration("sim_ignition")
+    end_effector = LaunchConfiguration("end_effector")
 
     bringup_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             FindPackageShare("z1_bringup"), "/launch/z1.launch.py"
         ], ),
         launch_arguments={
-            "sim_ingition": sim_ignition,
+            "sim_ignition": sim_ignition,
+            "end_effector": end_effector,
             "starting_controller": "joint_trajectory_controller",
         }.items(),
     )
@@ -77,6 +79,14 @@ def generate_launch_description():
             "sim_ignition",
             default_value="true",
             description="Launch simulation in Ignition Gazebo?"
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "end_effector",
+            default_value="clarius",
+            description="end effector type"
         )
     )
 

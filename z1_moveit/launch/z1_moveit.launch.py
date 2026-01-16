@@ -54,6 +54,7 @@ def launch_setup(context, *args, **kwargs):
             "sim_ignition": sim_ignition,
             "rviz": "false",
             "starting_controller": starting_controller,
+            "end_effector": LaunchConfiguration("end_effector"),
         }.items(),
     )
 
@@ -103,7 +104,7 @@ def generate_launch_description():
 
     declared_arguments.append(
         DeclareLaunchArgument(
-            "with_gripper", default_value="true", description="Use the gripper?"
+            "end_effector", default_value="clarius", description="End effector type"
         )
     )
 

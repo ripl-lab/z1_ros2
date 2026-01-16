@@ -42,7 +42,6 @@ def launch_setup(context, *args, **kwargs):
 
     xacro_file = LaunchConfiguration("xacro_file")
     robot_name = LaunchConfiguration("robot_name")
-    with_gripper = LaunchConfiguration("with_gripper")
     rviz = LaunchConfiguration("rviz")
     rviz_config = LaunchConfiguration("rviz_config")
     controller_config = LaunchConfiguration("controller_config")
@@ -69,7 +68,7 @@ def launch_setup(context, *args, **kwargs):
         mappings={
             "name": robot_name.perform(context),
             "prefix": "",
-            "with_gripper": with_gripper.perform(context),
+            "end_effector": LaunchConfiguration("end_effector").perform(context),
             "controllers": controller_config.perform(context),
             "sim_ignition": sim_ignition.perform(context),
         }
@@ -221,9 +220,15 @@ def generate_launch_description():
         os.environ[MDL_ENV_VAR] += ":" + os.path.join(
             get_package_prefix("z1_description"), "share"
         )
+        os.environ[MDL_ENV_VAR] += ":" + os.path.join(
+            get_package_prefix("clarius_description"), "share"
+        )
     else:
         os.environ[MDL_ENV_VAR] = os.path.join(
             get_package_prefix("z1_description"), "share"
+        )
+        os.environ[MDL_ENV_VAR] += ":" + os.path.join(
+            get_package_prefix("clarius_description"), "share"
         )
 
     LIB_ENV_VAR = "IGN_GAZEBO_SYSTEM_PLUGIN_PATH"
@@ -258,7 +263,7 @@ def generate_launch_description():
 
     declared_arguments.append(
         DeclareLaunchArgument(
-            "with_gripper", default_value="true", description="Use the gripper?"
+            "end_effector", default_value="clarius", description="End effector type"
         )
     )
 
