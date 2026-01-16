@@ -6,7 +6,7 @@
     <xacro:arg name="prefix" default="" />
     <xacro:arg name="controllers" default="$(find z1_bringup)/config/z1_controllers.yaml" />
     <xacro:arg name="sim_ignition" default="true" />
-    <xacro:arg name="with_gripper" default="true" />
+    <xacro:arg name="end_effector" default="clarius" />
 
     <xacro:include filename="$(find z1_description)/urdf/const.xacro" />
     <xacro:include filename="$(find z1_description)/urdf/z1.ros2_control.xacro" />
@@ -251,7 +251,7 @@
         </inertial>
     </link>
 
-    <xacro:if value="$(arg with_gripper)">
+    <xacro:if value="${'$(arg end_effector)' == 'z1_gripper'}">
         <joint name="gripperStatorLink" type="fixed">
             <origin rpy="0 0 0" xyz="0.051 0.0 0.0" />
             <parent link="link06" />
@@ -306,7 +306,7 @@
                     <mesh filename="package://z1_description/meshes/collision/z1_GripperMover.STL"
                         scale="1 1 1" />
                 </geometry>
-            </collision>
+            </collision>.
             <inertial>
                 <origin rpy="0 0 0"
                     xyz="${GripperMover_ComX} ${GripperMover_ComY} ${GripperMover_ComZ}" />
@@ -327,6 +327,57 @@
         </gazebo>
     </xacro:if>
 
+     <xacro:if value="${'$(arg end_effector)' == 'clarius'}">
+        <joint name="z1_mount_joint" type="fixed">
+            <parent link="link06"/>
+            <child link="z1_mount"/>
+            <origin xyz="${0.051-0.007} 0 0" rpy="0 ${pi/2} 0"/>
+        </joint>
+
+        <link name="z1_mount">
+            <visual>
+                <geometry>
+                    <mesh filename="package://z1_description/meshes/visual/clarius_z1_mount.stl"/>
+                </geometry>
+                <material name="Grey"/>
+            </visual>
+            <!-- may slow down planning due to high vertex count -->
+            <!-- <collision>
+                <geometry>
+                    <mesh filename="package://z1_description/meshes/visual/clarius_z1_mount.stl"/>
+                </geometry>
+            </collision> -->
+            <inertial>
+                <mass value="0.1"/>
+                <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+            </inertial>
+        </link>
+
+        <joint name="clarius_joint" type="fixed">
+            <parent link="z1_mount"/>
+            <child link="clarius_base"/>
+            <origin xyz="0 -0.012 0.0471" rpy="0 ${pi} 0"/>
+        </joint>
+
+        <link name="clarius_base">
+            <visual>
+                <geometry>
+                    <mesh filename="package://clarius_description/meshes/scanner.obj"/>
+                </geometry>
+                <material name="Grey"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <mesh filename="package://clarius_description/meshes/scanner.obj"/>
+                </geometry>
+            </collision>
+            <inertial>
+                <mass value="0.3"/>
+                <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+            </inertial>
+        </link>
+    </xacro:if>
+
     <xacro:if value="$(arg sim_ignition)">
         <gazebo reference="world" />
         <gazebo>
@@ -344,6 +395,6 @@
         name="$(arg name)"
         prefix="$(arg prefix)"
         sim_ignition="$(arg sim_ignition)"
-        with_gripper="$(arg with_gripper)" />
+        with_gripper="${'$(arg end_effector)' == 'z1_gripper'}" />
 
 </robot>

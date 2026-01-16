@@ -1,5 +1,5 @@
 # Z1 Robot Description
+![clarius_z1_mount](clarius_z1_mount.png)
 
 This package contains the URDF and the meshes of the Z1 manipulator to work in ROS2.
-
-Most of the files have been straight copies from the [official `unitree_ros`](https://github.com/unitreerobotics/unitree_ros/tree/8ebecd883a842a4631fcfa98933fae586aeb6709/robots/z1_description) repository, but have been modified to improve compliance with ROS2, particularly with the ROS2 control framework and the Ignition Simulator environment.
+An additional mount has been added to attach the Clarius C3 HD3 to the end of the arm, which can be specified using the 'end_effector' argument in xacro or when running `display.launch.py`.
