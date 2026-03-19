@@ -6,6 +6,7 @@
     <xacro:arg name="prefix" default="" />
     <xacro:arg name="controllers" default="$(find z1_bringup)/config/z1_controllers.yaml" />
     <xacro:arg name="sim_ignition" default="true" />
+    <xacro:arg name="sim_isaac" default="false" />
     <xacro:arg name="with_gripper" default="true" />
 
     <xacro:include filename="$(find z1_description)/urdf/const.xacro" />
@@ -344,6 +345,7 @@
         name="$(arg name)"
         prefix="$(arg prefix)"
         sim_ignition="$(arg sim_ignition)"
+        sim_isaac="$(arg sim_isaac)"
         with_gripper="$(arg with_gripper)" />
 
 </robot>

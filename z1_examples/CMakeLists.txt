@@ -15,6 +15,7 @@ find_package(rclpy              REQUIRED)
 install(
     PROGRAMS
     ${PROJECT_NAME}/waypoint_test.py
+    ${PROJECT_NAME}/pose_goal.py
     DESTINATION 
     lib/${PROJECT_NAME}
 )

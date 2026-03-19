@@ -16,6 +16,7 @@ set(ROS2_REQUIRED_COMPONENTS
     pluginlib
     rclcpp
     rclcpp_lifecycle
+    sensor_msgs
     )
 
 foreach(COMPONENT ${ROS2_REQUIRED_COMPONENTS})
@@ -131,11 +132,40 @@ target_compile_options(
 # |___|_| |_|___/\__\__,_|_|_|
 #
 
+# --- Isaac Sim hardware interface (no Unitree SDK dependency)
+
+add_library(
+    z1_isaac_hardware_interface
+    SHARED
+    src/z1_isaac_hardware_interface.cpp
+)
+target_include_directories(
+    z1_isaac_hardware_interface
+    PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
+target_link_libraries(
+    z1_isaac_hardware_interface
+    PRIVATE
+    Eigen3::Eigen
+)
+ament_target_dependencies(
+    z1_isaac_hardware_interface
+    PUBLIC
+    ${ROS2_REQUIRED_COMPONENTS}
+)
+target_compile_options(
+    z1_isaac_hardware_interface
+    PRIVATE
+    -Wall -Wextra -Wpedantic
+)
+
 pluginlib_export_plugin_description_file(hardware_interface z1_hardware_interface.xml)
 
 # Target install
 install(
-    TARGETS ${PROJECT_NAME}
+    TARGETS ${PROJECT_NAME} z1_isaac_hardware_interface
     EXPORT export_${PROJECT_NAME}
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib

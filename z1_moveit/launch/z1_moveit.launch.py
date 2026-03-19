@@ -41,6 +41,7 @@ from moveit_configs_utils.launches import generate_move_group_launch
 def launch_setup(context, *args, **kwargs):
 
     sim_ignition = LaunchConfiguration("sim_ignition").perform(context)
+    sim_isaac = LaunchConfiguration("sim_isaac").perform(context)
     rviz = LaunchConfiguration("rviz").perform(context)
     rviz_config = LaunchConfiguration("rviz_config").perform(context)
     starting_controller = LaunchConfiguration("starting_controller").perform(context)
@@ -52,6 +53,7 @@ def launch_setup(context, *args, **kwargs):
         PythonLaunchDescriptionSource(bringup_file),
         launch_arguments={
             "sim_ignition": sim_ignition,
+            "sim_isaac": sim_isaac,
             "rviz": "false",
             "starting_controller": starting_controller,
         }.items(),
@@ -60,7 +62,9 @@ def launch_setup(context, *args, **kwargs):
     # move_group.launch.file but with correct setting of "use_sim_time"
     moveit_config = MoveItConfigsBuilder("z1_description", package_name="z1_moveit")
     moveit_config = moveit_config.to_moveit_configs()
-    moveit_config.trajectory_execution["use_sim_time"] = (sim_ignition == "true")
+    moveit_config.trajectory_execution["use_sim_time"] = (
+        sim_ignition == "true" or sim_isaac == "true"
+    )
 
     rviz_launch_file = os.path.join(
         get_package_share_path("z1_moveit"), "launch", "moveit_rviz.launch.py"
@@ -120,6 +124,14 @@ def generate_launch_description():
             "sim_ignition",
             default_value="true",
             description="Launch simulation in Ignition Gazebo?"
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "sim_isaac",
+            default_value="false",
+            description="Use Isaac Sim as the physics backend (requires sim_ignition:=false)"
         )
     )
 

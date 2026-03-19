@@ -12,6 +12,7 @@ https://github.com/UniversalRobots/Universal_Robots_ROS2_Description/blob/rollin
         params="
         name:='z1'
         sim_ignition:=true
+        sim_isaac:=false
         sim_coppelia:=false
         prefix:=''
         with_gripper:=true
@@ -20,15 +21,21 @@ https://github.com/UniversalRobots/Universal_Robots_ROS2_Description/blob/rollin
         <ros2_control name="${name}" type="system">
 
             <hardware>
-                <!-- <xacro:if value="${coppelia}">
-                    <plugin>z1_coppelia_hw/Z1EffortFakeHardware</plugin>
-                </xacro:if> -->
+                <!-- Ignition / Gazebo simulation -->
                 <xacro:if value="${sim_ignition}">
                     <plugin>ign_ros2_control/IgnitionSystem</plugin>
                 </xacro:if>
                 <xacro:unless value="${sim_ignition}">
-                    <plugin>z1_hardware_interface/Z1HardwareInterface</plugin>
-                    <param name="gripper">${with_gripper}</param>
+                    <!-- Isaac Sim simulation -->
+                    <xacro:if value="${sim_isaac}">
+                        <plugin>z1_hardware_interface/Z1IsaacHardwareInterface</plugin>
+                        <param name="gripper">${with_gripper}</param>
+                    </xacro:if>
+                    <!-- Real robot via Unitree SDK -->
+                    <xacro:unless value="${sim_isaac}">
+                        <plugin>z1_hardware_interface/Z1HardwareInterface</plugin>
+                        <param name="gripper">${with_gripper}</param>
+                    </xacro:unless>
                 </xacro:unless>
             </hardware>
 

@@ -12,6 +12,8 @@
   <depend> hardware_interface </depend>
   <depend> pluginlib </depend>
   <depend> rclcpp </depend>
+  <depend> rclcpp_lifecycle </depend>
+  <depend> sensor_msgs </depend>
   <depend> ament_index_python </depend>
   <depend> eigen </depend>
 

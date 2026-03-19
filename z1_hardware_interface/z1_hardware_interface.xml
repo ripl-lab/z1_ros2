@@ -3,7 +3,18 @@
          type="unitree::z1::HardwareInterface"
          base_class_type="hardware_interface::SystemInterface">
     <description>
-    Unitree Z1 robot hardware interface.
+    Unitree Z1 robot hardware interface (real robot via Unitree SDK).
+    </description>
+  </class>
+</library>
+
+<library path="z1_isaac_hardware_interface">
+  <class name="z1_hardware_interface/Z1IsaacHardwareInterface"
+         type="unitree::z1::IsaacHardwareInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+    Unitree Z1 hardware interface for Isaac Sim.
+    Subscribes to /joint_states and publishes to /joint_commands.
     </description>
   </class>
 </library>
