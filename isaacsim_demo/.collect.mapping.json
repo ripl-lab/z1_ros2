@@ -1,0 +1,23 @@
+{
+    "version": "1.0",
+    "file_records": [
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Environments/Grid/Materials/Textures/WireframeBlur_basecolor.png",
+            "source_hash": "82b649fae5cac47292b28ce154c84734c8e6bf93",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Environments/Grid/Materials/Textures/WireframeBlur_basecolor.png",
+            "target_hash": "5b437c498689170fbccc01e14c2caca8d5b7e19a"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Environments/Grid/Materials/Textures/WireframeBlur_blue.png",
+            "source_hash": "b5535f12b495d552eb33e858091321e252e1d89c",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Environments/Grid/Materials/Textures/WireframeBlur_blue.png",
+            "target_hash": "83abc1b96623b95d70056cf0a9428f1499a01e04"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Environments/Grid/Materials/Textures/Wireframe_blue.png",
+            "source_hash": "e0d47bb0bea25b673a84d472e04e237f73459119",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Environments/Grid/Materials/Textures/Wireframe_blue.png",
+            "target_hash": "4749b2aa028abbf5db1aa8dfa0c210006580a026"
+        }
+    ]
+}
