@@ -70,6 +70,64 @@ As mentioned in [this issue](https://github.com/idra-lab/z1_ros2/issues/8), a te
 Note that this is a problem of the ROS2 control plugin for Ignition, and not some misconfiguration of this package; the connection with the hardware does not suffer this problem.
 A better fix to deleting parts from the URDF is planned but not implemented yet.
 
+### Pose Goal Example
+
+The [`pose_goal.launch.py`](./z1_examples/launch/pose_goal.launch.py) launch file brings up the full MoveIt stack (including `z1_bringup` and `joint_trajectory_controller`) alongside RViz, then automatically runs the `pose_goal.py` example after a short delay.
+
+For **simulation** (Ignition):
+```
+ros2 launch z1_examples pose_goal.launch.py sim_ignition:=true
+```
+
+For **simulation** (Isaac Sim):
+```
+ros2 launch z1_examples pose_goal.launch.py sim_isaac:=true
+```
+
+For **real hardware**:
+```
+ros2 launch z1_examples pose_goal.launch.py sim_ignition:=false
+```
+
+The `sim_ignition` argument defaults to `true`, and `sim_isaac` defaults to `false`.  
+When `sim_isaac:=true` is set, Ignition is automatically disabled in the MoveIt launch.
+
+
+```
+# Much faster reference tracking (biggest impact)
+ros2 param set /cartesian_impedance_controller filtering.pose 0.5
+
+# Stiffer position tracking
+ros2 param set /cartesian_impedance_controller stiffness.translation_x 1000.0
+ros2 param set /cartesian_impedance_controller stiffness.translation_y 1000.0
+ros2 param set /cartesian_impedance_controller stiffness.translation_z 1000.0
+ros2 param set /cartesian_impedance_controller stiffness.rotation_x 40.0
+ros2 param set /cartesian_impedance_controller stiffness.rotation_y 40.0
+ros2 param set /cartesian_impedance_controller stiffness.rotation_z 40.0
+
+# Allow faster torque ramp-up
+ros2 param set /cartesian_impedance_controller delta_tau_max 5.0
+```
+```
+ros2 launch z1_bringup z1.launch.py starting_controller:=cartesian_impedance_controller sim_isaac:=true
+```
+```
+ros2 topic pub --once /cartesian_impedance_controller/reference_pose \
+  geometry_msgs/msg/PoseStamped \
+  "{header: {frame_id: 'world'}, pose: {position: {x: 0.35, y: 0.0, z: 0.3}, orientation: {w: 1.0}}}"
+
+
+ros2 topic pub --once /cartesian_impedance_controller/reference_pose \
+  geometry_msgs/msg/PoseStamped \
+  "{header: {frame_id: 'world'}, pose: {position: {x: 0.0, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}"
+```
+
+ros2 run z1_examples impedance_marker.py
+
+
+```
+ros2 launch z1_bringup z1.launch.py starting_controller:=operational_impedance_controller sim_isaac:=true
+```
 
 ## Contributing
 

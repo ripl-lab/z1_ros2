@@ -48,15 +48,20 @@ def launch_setup(context, *args, **kwargs):
     rviz_config = LaunchConfiguration("rviz_config")
     controller_config = LaunchConfiguration("controller_config")
     starting_controller = LaunchConfiguration("starting_controller")
-    sim_ignition = LaunchConfiguration("sim_ignition")
-    sim_isaac = LaunchConfiguration("sim_isaac")
 
-    use_sim_time = (sim_ignition.perform(context) == "true")
+    sim_ignition_str = LaunchConfiguration("sim_ignition").perform(context)
+    sim_isaac_str = LaunchConfiguration("sim_isaac").perform(context)
+
+    # Isaac Sim and Ignition are mutually exclusive backends.
+    if sim_isaac_str == "true":
+        sim_ignition_str = "false"
+
+    use_sim_time = (sim_ignition_str == "true")
 
     # Conditions that tell whether the robot is simulated or not
-    is_simulation = IfCondition(sim_ignition)
-    is_real = UnlessCondition(sim_ignition)
-    is_isaac = IfCondition(sim_isaac)
+    is_simulation = IfCondition(sim_ignition_str)
+    is_real = UnlessCondition(sim_ignition_str)
+    is_isaac = IfCondition(sim_isaac_str)
 
     #   ____
     #  / ___|___  _ __ ___  _ __ ___   ___  _ __  ___
@@ -71,8 +76,8 @@ def launch_setup(context, *args, **kwargs):
             "prefix": "",
             "with_gripper": with_gripper.perform(context),
             "controllers": controller_config.perform(context),
-            "sim_ignition": sim_ignition.perform(context),
-            "sim_isaac": sim_isaac.perform(context),
+            "sim_ignition": sim_ignition_str,
+            "sim_isaac": sim_isaac_str,
         }
     )
     robot_description = {"robot_description": robot_description_content}
@@ -177,10 +182,7 @@ def launch_setup(context, *args, **kwargs):
 
     # The Unitree SDK background process is only needed for the physical robot,
     # not when Isaac Sim is the backend.
-    _is_real_hw = (
-        sim_ignition.perform(context) != "true"
-        and sim_isaac.perform(context) != "true"
-    )
+    _is_real_hw = (sim_ignition_str != "true" and sim_isaac_str != "true")
     if _is_real_hw:
         z1_controller_script_path = os.path.join(
             get_package_share_path("z1_hardware_interface"),
@@ -208,7 +210,7 @@ def launch_setup(context, *args, **kwargs):
     clock_bridge = IncludeLaunchDescription(
         AnyLaunchDescriptionSource(clock_bridge_launch),
         launch_arguments=[("bridge_name", "z1_clock_bridge")],
-        condition=IfCondition(sim_ignition),
+        condition=IfCondition(sim_ignition_str),
     )
 
     ignition_simulator_node = IncludeLaunchDescription(
@@ -218,7 +220,7 @@ def launch_setup(context, *args, **kwargs):
         launch_arguments={
             "gz_args": " -r -v 1 empty.sdf",
         }.items(),
-        condition=IfCondition(sim_ignition),
+        condition=IfCondition(sim_ignition_str),
     )
 
     ignition_spawn_z1_node = Node(
@@ -231,7 +233,7 @@ def launch_setup(context, *args, **kwargs):
             "-topic",
             "/robot_description",
         ],
-        condition=IfCondition(sim_ignition),
+        condition=IfCondition(sim_ignition_str),
     )
 
     nodes_to_start += [

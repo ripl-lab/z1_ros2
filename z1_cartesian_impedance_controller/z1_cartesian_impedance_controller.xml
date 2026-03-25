@@ -1,0 +1,10 @@
+<library path="z1_cartesian_impedance_controller">
+  <class name="z1_cartesian_impedance_controller/CartesianImpedanceController"
+         type="z1::CartesianImpedanceController"
+         base_class_type="controller_interface::ControllerInterface">
+    <description>
+      Cartesian impedance controller (Jacobian-transpose PD + gravity compensation)
+      for the Unitree Z1 6-DOF arm.
+    </description>
+  </class>
+</library>

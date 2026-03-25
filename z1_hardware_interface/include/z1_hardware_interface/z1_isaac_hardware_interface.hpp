@@ -1,6 +1,8 @@
 #ifndef Z1_ISAAC_HW_INTERFACE_HPP
 #define Z1_ISAAC_HW_INTERFACE_HPP
 
+#include <cmath>
+#include <limits>
 #include <mutex>
 #include <thread>
 
@@ -79,6 +81,11 @@ public:
             const rclcpp::Time& time, const rclcpp::Duration& period
     ) override;
 
+    hardware_interface::return_type perform_command_mode_switch(
+            const std::vector<std::string>& start_interfaces,
+            const std::vector<std::string>& stop_interfaces
+    ) override;
+
     // -------------------------------------------------------------------------
 
     [[nodiscard]] bool with_gripper() const;
@@ -111,17 +118,21 @@ private:
         double tau = 0.0;
     } _gripper_state;
 
-    // Command buffers (written by joint_trajectory_controller via CommandInterfaces)
+    // Command buffers (written by active controller via CommandInterfaces).
+    // NaN = "not commanded" — write() skips arrays where all values are NaN,
+    // so Isaac Sim's ArticulationController only applies the active command type.
+    static constexpr double NaN = std::numeric_limits<double>::quiet_NaN();
+
     struct {
-        Vec6   q   = Vec6::Zero();
-        Vec6   qd  = Vec6::Zero();
-        Vec6   tau = Vec6::Zero();
+        Vec6   q   = Vec6::Constant(NaN);
+        Vec6   qd  = Vec6::Constant(NaN);
+        Vec6   tau = Vec6::Constant(NaN);
     } _arm_cmd;
 
     struct {
-        double q   = 0.0;
-        double qd  = 0.0;
-        double tau = 0.0;
+        double q   = NaN;
+        double qd  = NaN;
+        double tau = NaN;
     } _gripper_cmd;
 
     void stop_spin_thread();

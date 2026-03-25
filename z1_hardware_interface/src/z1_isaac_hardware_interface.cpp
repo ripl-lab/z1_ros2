@@ -115,6 +115,49 @@ IsaacHardwareInterface::on_error(const rclcpp_lifecycle::State& prev_state) {
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
+//  __  __           _        ____          _ _       _
+// |  \/  | ___   __| | ___  / ___|_      _(_) |_ ___| |__
+// | |\/| |/ _ \ / _` |/ _ \ \___ \ \ /\ / / | __/ __| '_ \
+// | |  | | (_) | (_| |  __/  ___) \ V  V /| | || (__| | | |
+// |_|  |_|\___/ \__,_|\___| |____/ \_/\_/ |_|\__\___|_| |_|
+//
+
+hardware_interface::return_type
+IsaacHardwareInterface::perform_command_mode_switch(
+        const std::vector<std::string>& /* start_interfaces */,
+        const std::vector<std::string>& stop_interfaces
+) {
+    using hardware_interface::HW_IF_EFFORT;
+    using hardware_interface::HW_IF_POSITION;
+    using hardware_interface::HW_IF_VELOCITY;
+
+    // Reset released command buffers to NaN so write() doesn't send stale
+    // values alongside the new controller's commands.
+    for (const auto& iface : stop_interfaces) {
+        const auto slash = iface.find('/');
+        if (slash == std::string::npos) continue;
+        const std::string joint_name = iface.substr(0, slash);
+        const std::string type       = iface.substr(slash + 1);
+
+        const long idx = get_joint_idx(joint_name);
+        if (idx < 0) continue;
+
+        if (idx < 6) {
+            if      (type == HW_IF_POSITION) _arm_cmd.q(idx)   = NaN;
+            else if (type == HW_IF_VELOCITY) _arm_cmd.qd(idx)  = NaN;
+            else if (type == HW_IF_EFFORT)   _arm_cmd.tau(idx)  = NaN;
+        } else if (with_gripper()) {
+            if      (type == HW_IF_POSITION) _gripper_cmd.q   = NaN;
+            else if (type == HW_IF_VELOCITY) _gripper_cmd.qd  = NaN;
+            else if (type == HW_IF_EFFORT)   _gripper_cmd.tau  = NaN;
+        }
+    }
+
+    RCLCPP_INFO(_logger, "Command mode switch — reset %zu stopped interface(s)",
+                stop_interfaces.size());
+    return hardware_interface::return_type::OK;
+}
+
 //  _   ___        __  ___       _             __
 // | | | \ \      / / |_ _|_ __ | |_ ___ _ __ / _| __ _  ___ ___
 // | |_| |\ \ /\ / /   | || '_ \| __/ _ \ '__| |_ / _` |/ __/ _ \
@@ -216,21 +259,34 @@ IsaacHardwareInterface::write(
 
     const int n_joints = with_gripper() ? 7 : 6;
     msg.name.reserve(n_joints);
-    msg.position.reserve(n_joints);
-    msg.velocity.reserve(n_joints);
-    msg.effort.reserve(n_joints);
 
-    for (int i = 0; i < 6; ++i) {
+    for (int i = 0; i < 6; ++i)
         msg.name.push_back(info_.joints[i].name);
-        msg.position.push_back(_arm_cmd.q(i));
-        msg.velocity.push_back(_arm_cmd.qd(i));
-        msg.effort.push_back(_arm_cmd.tau(i));
-    }
-    if (with_gripper()) {
+    if (with_gripper())
         msg.name.push_back(info_.joints[6].name);
-        msg.position.push_back(_gripper_cmd.q);
-        msg.velocity.push_back(_gripper_cmd.qd);
-        msg.effort.push_back(_gripper_cmd.tau);
+
+    // Only populate arrays whose command type is actively being written by
+    // a controller.  Unclaimed interfaces stay at NaN (the init value), so
+    // Isaac Sim's ArticulationController won't apply that command type.
+    if (!std::isnan(_arm_cmd.q(0))) {
+        for (int i = 0; i < 6; ++i)
+            msg.position.push_back(_arm_cmd.q(i));
+        if (with_gripper())
+            msg.position.push_back(std::isnan(_gripper_cmd.q) ? 0.0 : _gripper_cmd.q);
+    }
+
+    if (!std::isnan(_arm_cmd.qd(0))) {
+        for (int i = 0; i < 6; ++i)
+            msg.velocity.push_back(_arm_cmd.qd(i));
+        if (with_gripper())
+            msg.velocity.push_back(std::isnan(_gripper_cmd.qd) ? 0.0 : _gripper_cmd.qd);
+    }
+
+    if (!std::isnan(_arm_cmd.tau(0))) {
+        for (int i = 0; i < 6; ++i)
+            msg.effort.push_back(_arm_cmd.tau(i));
+        if (with_gripper())
+            msg.effort.push_back(std::isnan(_gripper_cmd.tau) ? 0.0 : _gripper_cmd.tau);
     }
 
     _joint_cmd_pub->publish(msg);

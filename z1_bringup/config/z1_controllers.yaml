@@ -17,6 +17,12 @@ controller_manager:
     gripper_controller:
       type: "position_controllers/GripperActionController"
 
+    cartesian_impedance_controller:
+      type: "z1_cartesian_impedance_controller/CartesianImpedanceController"
+
+    operational_impedance_controller:
+      type: "z1_operational_impedance_controller/OperationalImpedanceController"
+
 
 position_controller:
   ros__parameters:
@@ -71,3 +77,84 @@ gripper_controller:
     max_effort: 30.0
     stall_velocity_threshold: 0.001
     stall_timeout: 1.0
+
+cartesian_impedance_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+      - joint4
+      - joint5
+      - joint6
+
+    # Cartesian stiffness [N/m] for translation, [Nm/rad] for rotation
+    stiffness:
+      translation_x: 500.0
+      translation_y: 500.0
+      translation_z: 500.0
+      rotation_x: 100.0
+      rotation_y: 100.0
+      rotation_z: 100.0
+
+    damping_factor:
+      translation_x: 1.0
+      translation_y: 1.0  
+      translation_z: 1.0
+      rotation_x: 1.0
+      rotation_y: 1.0
+      rotation_z: 1.0
+
+    delta_tau_max: 2.0
+
+    # Exponential-smoothing filter percentages (0, 1].
+    # At 1000 Hz, low values cause very slow convergence.
+    # 0.99 ≈ 99% convergence in ~1 second; 0.5 ≈ 50% in ~1 second.
+    filtering:
+      stiffness: 0.99
+      pose: 0.99
+      wrench: 0.99
+
+operational_impedance_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+      - joint4
+      - joint5
+      - joint6
+
+    stiffness:
+      translation_x: 500.0
+      translation_y: 500.0
+      translation_z: 500.0
+      rotation_x: 100.0
+      rotation_y: 100.0
+      rotation_z: 100.0
+
+    damping_factor:
+      translation_x: 1.0
+      translation_y: 1.0
+      translation_z: 1.0
+      rotation_x: 1.0
+      rotation_y: 1.0
+      rotation_z: 1.0
+
+    use_inertia_shaping: false
+
+    desired_inertia:
+      translation_x: 1.0
+      translation_y: 1.0
+      translation_z: 1.0
+      rotation_x: 0.1
+      rotation_y: 0.1
+      rotation_z: 0.1
+
+    lambda_damping: 0.005
+    delta_tau_max: 2.0
+
+    filtering:
+      stiffness: 0.99
+      pose: 0.99
+      wrench: 0.99

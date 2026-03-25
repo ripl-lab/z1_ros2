@@ -1,0 +1,59 @@
+operational_impedance_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+      - joint4
+      - joint5
+      - joint6
+
+    # Cartesian stiffness K_m [N/m] for translation, [Nm/rad] for rotation
+    stiffness:
+      translation_x: 500.0
+      translation_y: 500.0
+      translation_z: 500.0
+      rotation_x: 50.0
+      rotation_y: 50.0
+      rotation_z: 50.0
+
+    # Damping factors: D_i = alpha_i * 2 * sqrt(K_i).  alpha=1 → critically
+    # damped assuming unit effective inertia.
+    damping_factor:
+      translation_x: 1.0
+      translation_y: 1.0
+      translation_z: 1.0
+      rotation_x: 1.0
+      rotation_y: 1.0
+      rotation_z: 1.0
+
+    # When false (default), M_m = Λ(q) — the robot keeps its natural
+    # operational-space inertia and external force terms cancel in the
+    # torque equation.  When true, M_m is set to the diagonal values below
+    # and inertia shaping is active (requires external_wrench feedback).
+    use_inertia_shaping: false
+
+    # Desired inertia M_m (only used when use_inertia_shaping is true).
+    # [kg] for translation, [kg·m²] for rotation.
+    desired_inertia:
+      translation_x: 1.0
+      translation_y: 1.0
+      translation_z: 1.0
+      rotation_x: 0.1
+      rotation_y: 0.1
+      rotation_z: 0.1
+
+    # Damping added to Λ = (J M⁻¹ Jᵀ + λ² I)⁻¹ for near-singularity
+    # robustness.  Larger values = more regularisation but less accurate
+    # model cancellation.
+    lambda_damping: 0.005
+
+    # Maximum per-joint torque change per control cycle [Nm]
+    delta_tau_max: 5.0
+
+    # Exponential-smoothing filter percentages (0, 1].
+    # At 1000 Hz, 0.99 ≈ 99% convergence in ~1 second.
+    filtering:
+      stiffness: 0.99
+      pose: 0.99
+      wrench: 0.99

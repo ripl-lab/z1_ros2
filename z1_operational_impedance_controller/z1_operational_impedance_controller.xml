@@ -1,0 +1,10 @@
+<library path="z1_operational_impedance_controller">
+  <class name="z1_operational_impedance_controller/OperationalImpedanceController"
+         type="z1::OperationalImpedanceController"
+         base_class_type="controller_interface::ControllerInterface">
+    <description>
+      Operational-space impedance controller with full inverse dynamics
+      cancellation (Λ, μ, p) for the Unitree Z1 6-DOF arm.
+    </description>
+  </class>
+</library>

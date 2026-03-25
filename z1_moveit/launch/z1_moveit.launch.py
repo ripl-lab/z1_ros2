@@ -46,6 +46,10 @@ def launch_setup(context, *args, **kwargs):
     rviz_config = LaunchConfiguration("rviz_config").perform(context)
     starting_controller = LaunchConfiguration("starting_controller").perform(context)
 
+    # Isaac Sim and Ignition are mutually exclusive backends.
+    if sim_isaac == "true":
+        sim_ignition = "false"
+
     bringup_file = os.path.join(
         get_package_share_path("z1_bringup"), "launch", "z1.launch.py"
     )

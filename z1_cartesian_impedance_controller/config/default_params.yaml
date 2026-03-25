@@ -1,0 +1,39 @@
+cartesian_impedance_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint3
+      - joint4
+      - joint5
+      - joint6
+
+    # Cartesian stiffness [N/m] for translation, [Nm/rad] for rotation
+    stiffness:
+      translation_x: 10000.0
+      translation_y: 10000.0
+      translation_z: 10000.0
+      rotation_x: 1000.0
+      rotation_y: 1000.0
+      rotation_z: 1000.0
+
+    # Damping factors: d_i = alpha_i * 2 * sqrt(k_i).  alpha=1 → critically
+    # damped assuming unit effective inertia.
+    damping_factor:
+      translation_x: 0.1
+      translation_y: 0.1
+      translation_z: 0.1
+      rotation_x: 0.1
+      rotation_y: 0.1
+      rotation_z: 0.1
+
+    # Maximum per-joint torque change per control cycle [Nm]
+    delta_tau_max: 100.0
+
+    # Exponential-smoothing filter percentages (0, 1].
+    # At 1000 Hz, low values cause very slow convergence.
+    # 0.99 ≈ 99% convergence in ~1 second; 0.5 ≈ 50% in ~1 second.
+    filtering:
+      stiffness: 0.99
+      pose: 0.99
+      wrench: 0.99
