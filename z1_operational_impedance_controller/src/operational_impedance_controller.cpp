@@ -33,6 +33,7 @@ OperationalImpedanceController::state_interface_configuration() const {
   for (const auto &joint : joint_names_) {
     config.names.push_back(joint + "/" + hardware_interface::HW_IF_POSITION);
     config.names.push_back(joint + "/" + hardware_interface::HW_IF_VELOCITY);
+    config.names.push_back(joint + "/" + hardware_interface::HW_IF_EFFORT);
   }
   return config;
 }
@@ -254,6 +255,12 @@ OperationalImpedanceController::on_configure(
   debug_lambda_diag_pub_ =
       get_node()->create_publisher<std_msgs::msg::Float64MultiArray>(
           "~/debug/lambda_diagonal", debug_qos);
+  debug_tau_ext_pub_ =
+      get_node()->create_publisher<std_msgs::msg::Float64MultiArray>(
+          "~/debug/tau_ext", debug_qos);
+  debug_F_ext_hat_pub_ =
+      get_node()->create_publisher<std_msgs::msg::Float64MultiArray>(
+          "~/debug/F_ext_hat", debug_qos);
 
   RCLCPP_INFO(logger,
               "Operational-space impedance controller configured "
@@ -335,12 +342,15 @@ controller_interface::return_type OperationalImpedanceController::update(
 
 void OperationalImpedanceController::read_joint_states() {
   for (size_t i = 0; i < NUM_JOINTS; ++i) {
-    const auto q_opt = state_interfaces_[2 * i].get_optional();
-    const auto dq_opt = state_interfaces_[2 * i + 1].get_optional();
+    const auto q_opt = state_interfaces_[3 * i].get_optional();
+    const auto dq_opt = state_interfaces_[3 * i + 1].get_optional();
+    const auto tau_opt = state_interfaces_[3 * i + 2].get_optional();
     if (q_opt)
       q_(static_cast<long>(i)) = *q_opt;
     if (dq_opt)
       dq_(static_cast<long>(i)) = *dq_opt;
+    if (tau_opt)
+      tau_measured_(static_cast<long>(i)) = *tau_opt;
   }
 }
 
@@ -547,8 +557,8 @@ void OperationalImpedanceController::apply_damping() {
 
 double OperationalImpedanceController::filter_step(double update_frequency,
                                                    double filter_percentage) {
-  const double safe_pct = std::min(filter_percentage, 0.999999);
-  const double kappa = -1.0 / std::log(1.0 - safe_pct);
+  if (filter_percentage >= 1.0) return 1.0;
+  const double kappa = -1.0 / std::log(1.0 - filter_percentage);
   return 1.0 / (kappa * update_frequency + 1.0);
 }
 
@@ -598,6 +608,18 @@ void OperationalImpedanceController::publish_debug(const Vec6 &tau_d) {
   {
     Eigen::Matrix<double, 6, 1> lambda_diag = lambda_.diagonal();
     debug_lambda_diag_pub_->publish(make_msg(lambda_diag.data(), 6));
+  }
+
+  // Estimated external wrench (quasi-static):
+  //   τ_ext = τ_measured − c(q,q̇) − g(q)
+  //   F̂_ext = J⁻ᵀ τ_ext  (= Λ J M⁻¹ τ_ext for the dynamically consistent version)
+  {
+    Vec6 tau_ext = tau_measured_ - coriolis_ - gravity_vec_;
+    debug_tau_ext_pub_->publish(make_msg(tau_ext.data(), NUM_JOINTS));
+
+    Eigen::Matrix<double, 6, 1> F_ext_hat =
+        lambda_ * jacobian_ * mass_matrix_inv_ * tau_ext;
+    debug_F_ext_hat_pub_->publish(make_msg(F_ext_hat.data(), 6));
   }
 }
 

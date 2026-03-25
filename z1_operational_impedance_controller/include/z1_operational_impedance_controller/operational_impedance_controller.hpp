@@ -98,6 +98,7 @@ private:
   // -- Joint state --
   Vec6 q_ = Vec6::Zero();
   Vec6 dq_ = Vec6::Zero();
+  Vec6 tau_measured_ = Vec6::Zero();
 
   // -- Kinematics --
   Mat6 jacobian_ = Mat6::Zero();
@@ -171,6 +172,8 @@ private:
   DebugPub debug_torque_commanded_pub_;
   DebugPub debug_ee_velocity_pub_;
   DebugPub debug_lambda_diag_pub_;
+  DebugPub debug_tau_ext_pub_;
+  DebugPub debug_F_ext_hat_pub_;
   size_t debug_counter_ = 0;
   static constexpr size_t DEBUG_DECIMATION = 10;
 

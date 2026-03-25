@@ -23,7 +23,6 @@ controller_manager:
     operational_impedance_controller:
       type: "z1_operational_impedance_controller/OperationalImpedanceController"
 
-
 position_controller:
   ros__parameters:
     joints:
@@ -99,7 +98,7 @@ cartesian_impedance_controller:
 
     damping_factor:
       translation_x: 1.0
-      translation_y: 1.0  
+      translation_y: 1.0
       translation_z: 1.0
       rotation_x: 1.0
       rotation_y: 1.0
@@ -126,12 +125,12 @@ operational_impedance_controller:
       - joint6
 
     stiffness:
-      translation_x: 500.0
-      translation_y: 500.0
-      translation_z: 500.0
-      rotation_x: 100.0
-      rotation_y: 100.0
-      rotation_z: 100.0
+      translation_x: 1000.0
+      translation_y: 1000.0
+      translation_z: 1000.0
+      rotation_x: 200.0
+      rotation_y: 200.0
+      rotation_z: 200.0
 
     damping_factor:
       translation_x: 1.0
@@ -154,7 +153,8 @@ operational_impedance_controller:
     lambda_damping: 0.005
     delta_tau_max: 2.0
 
+    # No filtering
     filtering:
-      stiffness: 0.99
-      pose: 0.99
-      wrench: 0.99
+      stiffness: 1.0
+      pose: 1.0
+      wrench: 1.0
