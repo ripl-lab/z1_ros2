@@ -92,6 +92,30 @@ ros2 launch z1_examples pose_goal.launch.py sim_ignition:=false
 The `sim_ignition` argument defaults to `true`, and `sim_isaac` defaults to `false`.  
 When `sim_isaac:=true` is set, Ignition is automatically disabled in the MoveIt launch.
 
+### Position control using Moveit2 joint_trajectory_controller
+```
+ros2 launch z1_moveit z1_moveit.launch.py sim_isaac:=true
+ros2 launch z1_moveit z1_moveit.launch.py sim_ignition:=false
+ros2 launch z1_moveit z1_moveit.launch.py sim_ignition:=true
+```
+
+### Impedance control
+```
+ros2 launch z1_bringup z1.launch.py starting_controller:=operational_impedance_controller sim_isaac:=true
+ros2 run z1_examples impedance_marker.py --ros-args -p standalone:=true -p controller:=operational_impedance_controller
+```
+
+or
+```
+ros2 launch z1_bringup z1_unified.launch.py starting_controller:=operational_impedance_controller sim_isaac:=true
+```
+
+Hardware
+
+```
+ros2 launch z1_bringup z1.launch.py starting_controller:=operational_impedance_controller sim_ignition:=false
+```
+
 
 ```
 # Much faster reference tracking (biggest impact)
@@ -125,9 +149,16 @@ ros2 topic pub --once /cartesian_impedance_controller/reference_pose \
 ros2 run z1_examples impedance_marker.py
 
 
-```
-ros2 launch z1_bringup z1.launch.py starting_controller:=operational_impedance_controller sim_isaac:=true
-```
+
+# Switch from impedance -> trajectory (to go home via MoveIt)
+ros2 control switch_controllers \
+  --deactivate cartesian_impedance_controller \
+  --activate joint_trajectory_controller
+
+# Switch back to impedance
+ros2 control switch_controllers \
+  --deactivate joint_trajectory_controller \
+  --activate cartesian_impedance_controller
 
 ## Contributing
 

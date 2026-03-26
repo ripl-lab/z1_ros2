@@ -124,7 +124,7 @@
     <xacro:property name="joint2_PositionMin" value="-0.01"/>
     <xacro:property name="joint2_PositionMax" value="${PI*170/180}"/>
     <xacro:property name="joint3_PositionMin" value="${-PI*165/180}"/>
-    <xacro:property name="joint3_PositionMax" value="0.02"/>
+    <xacro:property name="joint3_PositionMax" value="0.1"/>
     <xacro:property name="joint4_PositionMin" value="${-PI*87/180}"/>
     <xacro:property name="joint4_PositionMax" value="${PI*87/180}"/>
     <xacro:property name="joint5_PositionMin" value="${-PI*77/180}"/>

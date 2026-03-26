@@ -17,6 +17,7 @@ install(
     ${PROJECT_NAME}/waypoint_test.py
     ${PROJECT_NAME}/pose_goal.py
     ${PROJECT_NAME}/impedance_marker.py
+    ${PROJECT_NAME}/controller_switcher.py
     DESTINATION 
     lib/${PROJECT_NAME}
 )

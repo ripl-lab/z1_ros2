@@ -1,5 +1,6 @@
 controller_manager:
   ros__parameters:
+    # TODO should this be 500 Hz as per Z1 SDK documentation?
     update_rate: 1000 # Hz
 
     joint_state_broadcaster:
@@ -60,6 +61,19 @@ joint_trajectory_controller:
       - position
       - velocity
 
+    # PID gains for effort-based trajectory tracking.
+    # Using effort interfaces avoids the gz_ros2_control bug where
+    # switching from effort→position mode leaves joints uncontrolled.
+    # All switchable controllers now share the effort interface so
+    # no command-mode switch ever occurs.
+    # gains:
+    #   joint1: {p: 400.0,  d: 20.0, i: 5.0, i_clamp: 10.0}
+    #   joint2: {p: 1000.0, d: 50.0, i: 10.0, i_clamp: 15.0}
+    #   joint3: {p: 600.0,  d: 30.0, i: 10.0, i_clamp: 15.0}
+    #   joint4: {p: 200.0,  d: 10.0, i: 5.0, i_clamp: 10.0}
+    #   joint5: {p: 100.0,  d: 8.0,  i: 5.0, i_clamp: 10.0}
+    #   joint6: {p: 50.0,   d: 5.0,  i: 2.0, i_clamp: 5.0}
+
     action_monitor_rate: 20.0
 
     allow_partial_joints_goal: false
@@ -89,12 +103,12 @@ cartesian_impedance_controller:
 
     # Cartesian stiffness [N/m] for translation, [Nm/rad] for rotation
     stiffness:
-      translation_x: 500.0
-      translation_y: 500.0
-      translation_z: 500.0
-      rotation_x: 100.0
-      rotation_y: 100.0
-      rotation_z: 100.0
+      translation_x: 200.0
+      translation_y: 200.0
+      translation_z: 200.0
+      rotation_x: 50.0
+      rotation_y: 50.0
+      rotation_z: 50.0
 
     damping_factor:
       translation_x: 1.0

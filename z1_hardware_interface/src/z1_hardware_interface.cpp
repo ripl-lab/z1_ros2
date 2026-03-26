@@ -237,7 +237,8 @@ HardwareInterface::export_command_interfaces() {
 hardware_interface::return_type
 HardwareInterface::
         read(const rclcpp::Time& /* time */, const rclcpp::Duration& /* period */) {
-    _arm->sendRecv();
+    // sendRecvThread already runs sendRecv() at 500 Hz in the background;
+    // just copy the latest state without an extra blocking UDP round-trip.
     for (long i = 0; i < 6; ++i) {
         _arm_state.q(i)   = _arm->lowstate->q[i];
         _arm_state.qd(i)  = _arm->lowstate->dq[i];
@@ -257,7 +258,8 @@ HardwareInterface::
     saturate_torque();
     _arm->setArmCmd(_arm_cmd.q, _arm_cmd.qd, _arm_cmd.tau);
     _arm->setGripperCmd(_gripper_cmd.q, _gripper_cmd.qd, _gripper_cmd.tau);
-    _arm->sendRecv();
+    // sendRecvThread picks up the commands set above at 500 Hz;
+    // no need for a blocking sendRecv() here.
     return hardware_interface::return_type::OK;
 }
 
