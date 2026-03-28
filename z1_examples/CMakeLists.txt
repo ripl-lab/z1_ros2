@@ -18,12 +18,13 @@ install(
     ${PROJECT_NAME}/pose_goal.py
     ${PROJECT_NAME}/impedance_marker.py
     ${PROJECT_NAME}/controller_switcher.py
+    ${PROJECT_NAME}/apriltag_localizer.py
     DESTINATION 
     lib/${PROJECT_NAME}
 )
 
 install(
-    DIRECTORY launch 
+    DIRECTORY launch config
     DESTINATION share/${PROJECT_NAME}
 )
 

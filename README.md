@@ -99,6 +99,35 @@ ros2 launch z1_moveit z1_moveit.launch.py sim_ignition:=false
 ros2 launch z1_moveit z1_moveit.launch.py sim_ignition:=true
 ```
 
+```
+ros2 run apriltag_ros apriltag_node --ros-args \
+  -r image_rect:=/rgb \
+  -r camera_info:=/camera_info \
+  --params-file $(ros2 pkg prefix z1_examples)/share/z1_examples/config/apriltag.yaml
+```
+
+```
+ros2 topic echo /apriltag/detections --once
+```
+
+```
+ros2 run z1_examples apriltag_localizer.py --ros-args \
+  -p world_frame:=world \
+  -p landmark_frame:=apriltag_69_landmark \
+  -p observed_tag_frame:=apriltag_69 \
+  -p camera_frame:=Camera_OmniVision_OV9782_Color
+```
+
+`publish_child_frame` defaults to `camera_frame` (omit it when you only need `world` → camera). Set `publish_child_frame` separately if you publish `world` → some other frame under the camera (e.g. `base_link`).
+
+TF chain the node expects:
+
+- `world` → `apriltag_69_landmark` — static tag pose (e.g. from Isaac / your map).
+- `camera_frame` → `observed_tag_frame` — tag in camera frame from `apriltag_ros` (updates as the camera moves).
+- `world` → `publish_child_frame` — **published by this node**: combines the landmark pose with the inverse of the camera→tag observation so the camera (or another frame under it) is localized in `world`.
+
+
+
 ### Impedance control
 ```
 ros2 launch z1_bringup z1.launch.py starting_controller:=operational_impedance_controller sim_isaac:=true

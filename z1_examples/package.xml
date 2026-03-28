@@ -17,6 +17,7 @@
   <depend>std_msgs</depend>
   <depend>visualization_msgs</depend>
   <depend>interactive_markers</depend>
+  <depend>rclpy</depend>
   <depend>tf2_ros</depend>
   <depend>controller_manager_msgs</depend>
 

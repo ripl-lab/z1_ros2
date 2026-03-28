@@ -1,13 +1,50 @@
+# Build / ROS 2 (colcon may use these inside the repo)
 build/
 _build/
+install/
+log/
+.colcon/
 
+# IDE
 .vscode/
 .idea/
-.cache/
 *.iml
 *.ipr
 *.iws
-file.urdf
-compile_commands.json
 
+# Tool caches
+.cache/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor backups
+*~
+*.swp
+*.swo
+
+# C++ / CMake (stray files outside build/)
+compile_commands.json
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+*.cmake.user
+
+# Generated / local artifacts
+file.urdf
+
+# Project-specific generated headers
 include/unitree_z1_hw_interface/defines.hpp
