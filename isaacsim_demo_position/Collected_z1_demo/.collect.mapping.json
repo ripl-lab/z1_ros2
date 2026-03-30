@@ -1,0 +1,113 @@
+{
+    "version": "1.0",
+    "file_records": [
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/AprilTag/Textures/tag36h11.png",
+            "source_hash": "397129628e0baa2848bbe2815e92e5ecddf82bad",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/AprilTag/Textures/tag36h11.png",
+            "target_hash": "bbc3b489f0e3fd0dede6363b3285de75a18617ff"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/AprilTag/AprilTag.mdl",
+            "source_hash": "dd17fe0c4f54dfffde37c8ce00e6ad2ba884719c",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/AprilTag/AprilTag.mdl",
+            "target_hash": "73f4e5fac3ee8ff5613f44825952edb1c95d47a4"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Props/Rubiks_Cube/textures/RubikCube_AO.png",
+            "source_hash": "054f1897d61c280336c0dd079858de1a350e6001",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Props/Rubiks_Cube/textures/RubikCube_AO.png",
+            "target_hash": "f5082acdc451b42cb2985e244c5bf0bb8c1cdecd"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Props/Rubiks_Cube/textures/RubikCube_Color.png",
+            "source_hash": "7fe0b763bd87634a72d876fddce055fccd2acabe",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Props/Rubiks_Cube/textures/RubikCube_Color.png",
+            "target_hash": "9a9d46f78ca29ae0b5203d77e2c33d7a43051580"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Props/Rubiks_Cube/textures/RubikCube_Normal.png",
+            "source_hash": "fc891ada116e71b19ff13c8575a41da19d039c11",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Props/Rubiks_Cube/textures/RubikCube_Normal.png",
+            "target_hash": "b0604979ae5e2cd3c18f6fbc81764f69188d96d3"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Props/Rubiks_Cube/textures/RubikCube_Rough.png",
+            "source_hash": "78d1533cc2d2b133fa1a554a9925011123dac5bb",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Props/Rubiks_Cube/textures/RubikCube_Rough.png",
+            "target_hash": "b6d0436cc37ec1916f77df6dfe220063933a07fc"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Environments/Grid/Materials/Textures/WireframeBlur_basecolor.png",
+            "source_hash": "82b649fae5cac47292b28ce154c84734c8e6bf93",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Environments/Grid/Materials/Textures/WireframeBlur_basecolor.png",
+            "target_hash": "1082c130932b7297f48e0ee876971e260741eb36"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Environments/Grid/Materials/Textures/WireframeBlur_blue.png",
+            "source_hash": "b5535f12b495d552eb33e858091321e252e1d89c",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Environments/Grid/Materials/Textures/WireframeBlur_blue.png",
+            "target_hash": "983a43d2691799eb672d1304924e77fa1c20232d"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Environments/Grid/Materials/Textures/Wireframe_blue.png",
+            "source_hash": "e0d47bb0bea25b673a84d472e04e237f73459119",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Environments/Grid/Materials/Textures/Wireframe_blue.png",
+            "target_hash": "3526ed19e14107a276d4b9a3dc97a802b8354d91"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Anodized.mdl",
+            "source_hash": "6b3d24a43ae006a18d6db1b0edfa2cbfedae6af7",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Anodized.mdl",
+            "target_hash": "c01ebdc77463f14d05e76beb4da9301262efd263"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Cast.mdl",
+            "source_hash": "511142ec469227e456ac843eae6ae143669bbfb9",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Cast.mdl",
+            "target_hash": "7c0da0614ef47bd6247fcad080cf5ace82579004"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Plastics/Plastic_ABS.mdl",
+            "source_hash": "bd9138211e761b0ad237effab0847258acdc4b7c",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Plastics/Plastic_ABS.mdl",
+            "target_hash": "8ead7d7cba771b57f556c6937bb8b72298edb297"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Cast/Aluminum_Cast_BaseColor.png",
+            "source_hash": "a34a2cbbad57d7433ff1b5322fb1c3fb85ea3fa6",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Cast/Aluminum_Cast_BaseColor.png",
+            "target_hash": "ef85dc70f3f1d2992b5cd456653b77f5da772b66"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Anodized/Aluminum_Anodized_BaseColor.png",
+            "source_hash": "11b3ec3856f0d57f5a180a3e7f0e58b31b0924b3",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Anodized/Aluminum_Anodized_BaseColor.png",
+            "target_hash": "86312dbf1a739fc22b441c64a3804400aa064672"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Cast/Aluminum_Cast_ORM.png",
+            "source_hash": "fc140937d8227859898e5781fc792a64b55e798b",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Cast/Aluminum_Cast_ORM.png",
+            "target_hash": "02330b00bba1da7d851b295a2d6c68a6c9ae1830"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Anodized/Aluminum_Anodized_ORM.png",
+            "source_hash": "d1d504c9b1467ed43a7d0682c3dbbab07b316fd2",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Anodized/Aluminum_Anodized_ORM.png",
+            "target_hash": "037a6ddd06d108d08f85891b6b6d5f8e0b0478fe"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Cast/Aluminum_Cast_N.png",
+            "source_hash": "161fb010a297809f45094b87e25cfd3582dbc7c5",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Cast/Aluminum_Cast_N.png",
+            "target_hash": "56aa8d5d0e3555f031157be20b68cc6e23624f96"
+        },
+        {
+            "source_url": "/home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Anodized/Aluminum_Anodized_Normal.png",
+            "source_hash": "7bad3f39e2365cef4b1cc23cb19e10b789ffaedb",
+            "target_url": "./home/john/isaacsim_assets/Assets/Isaac/5.1/Isaac/Materials/Base/Metals/Aluminum_Anodized/Aluminum_Anodized_Normal.png",
+            "target_hash": "3ea1101871ddd361987edded8f39854430e5feb3"
+        }
+    ]
+}
