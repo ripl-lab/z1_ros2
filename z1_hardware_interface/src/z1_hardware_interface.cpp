@@ -273,19 +273,20 @@ HardwareInterface::perform_command_mode_switch(
     using hardware_interface::HW_IF_VELOCITY;
 
     RCLCPP_INFO(get_logger(), "Switching control mode");
+    std::vector<bool> pos_claimed(7, false);
+    std::vector<bool> vel_claimed(7, false);
+    std::vector<bool> eff_claimed(7, false);
+
     for (const std::string& interface : start_interfaces) {
         const auto [name, type] = split_interface(interface);
         auto idx                = get_joint_id(name);
 
         if (type == HW_IF_POSITION) {
-            _current_gains.kp[idx] = _default_gains.kp[idx];
-            _current_gains.kd[idx] = _default_gains.kd[idx];
+            pos_claimed[idx] = true;
         } else if (type == HW_IF_VELOCITY) {
-            _current_gains.kp[idx] = 0.0;
-            _current_gains.kd[idx] = _default_gains.kd[idx];
+            vel_claimed[idx] = true;
         } else if (type == HW_IF_EFFORT) {
-            _current_gains.kp[idx] = 0.0;
-            _current_gains.kd[idx] = 0.0;
+            eff_claimed[idx] = true;
         } else {
             RCLCPP_ERROR(
                     get_logger(),
@@ -293,6 +294,19 @@ HardwareInterface::perform_command_mode_switch(
                     interface.c_str()
             );
             return hardware_interface::return_type::ERROR;
+        }
+    }
+
+    for (size_t idx = 0; idx < 7; ++idx) {
+        if (pos_claimed[idx]) {
+            _current_gains.kp[idx] = _default_gains.kp[idx];
+            _current_gains.kd[idx] = _default_gains.kd[idx];
+        } else if (vel_claimed[idx]) {
+            _current_gains.kp[idx] = 0.0;
+            _current_gains.kd[idx] = _default_gains.kd[idx];
+        } else if (eff_claimed[idx]) {
+            _current_gains.kp[idx] = 0.0;
+            _current_gains.kd[idx] = 0.0;
         }
     }
 

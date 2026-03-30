@@ -104,12 +104,16 @@ private:
 
     ArmPtr _arm = nullptr;
 
-    Vec6   _arm_max_torque     = 20.0 * Vec6::Ones();
+//     Vec6   _arm_max_torque     = 20.0 * Vec6::Ones();
+    Vec6   _arm_max_torque     = (Vec6() << 20.0, 20.0, 20.0, 10.0, 10.0, 5.0).finished();
+
     double _gripper_max_torque = 20.0;
 
     struct GainsData {
         std::vector<double> kp = {20.0, 30.0, 30.0, 20.0, 15.0, 10.0, 20.0};
-        std::vector<double> kd = {2000, 2000, 2000, 2000, 2000, 2000, 2000};
+        // std::vector<double> kd = {2000, 2000, 2000, 2000, 2000, 2000, 2000};
+        std::vector<double> kd = {2000, 2000, 2000, 2000, 1000, 1000, 1000};
+
     };
 
     GainsData _default_gains;

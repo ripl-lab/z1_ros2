@@ -234,3 +234,15 @@ If you want to improve something, or have some particular request, please first 
 
 As general rule, please develop your feature/bug-fix on a new branch, and create a pull request targeting the **development branch** (`devel`).
 There we will make sure that the change is working as expected, and will update the reference of the `main` branch accordingly, to guarantee the stability of such branch.
+
+## Lessons Learned & Troubleshooting
+
+### 1. Hardware Overheating ("Motor windings overheat")
+The Unitree Z1 SDK uses a PD controller for joint control: `tau = Kp * (q_cmd - q) + Kd * (qd_cmd - qd) + tau_cmd`. 
+If the ROS 2 controller (like `joint_trajectory_controller`) is configured to only send `position` commands, the velocity command (`qd_cmd`) defaults to `0.0`. With the SDK's high default derivative gain (`Kd = 2000`), this creates a massive artificial damping force. The motors will fight against this damping to follow the position trajectory, drawing excessive current and quickly triggering a "Motor windings overheat" error (especially on smaller motors like Motor 4).
+**Fix:** Always ensure that `velocity` is included in the `command_interfaces` of your controllers in `z1_controllers.yaml` so that feedforward velocity is properly passed to the hardware.
+
+### 2. ROS 2 Control Interface Claiming (Gain Overwriting)
+When a controller claims multiple interfaces (e.g., `position` and `velocity`), `ros2_control` passes them to the hardware interface's `perform_command_mode_switch` sequentially (e.g., `"joint1/position"`, then `"joint1/velocity"`). 
+If the hardware interface processes these sequentially in a loop and blindly applies gains, a later interface can overwrite the gains of an earlier one. For example, processing `velocity` might set `Kp = 0.0`, overwriting the `Kp` set by the `position` interface just a microsecond earlier, causing the arm to go limp and drop.
+**Fix:** Decouple the parsing of claimed interfaces from the application of gains. Gather all claimed interfaces first, then apply gains based on priority (e.g., if `position` is claimed at all, keep `Kp` active).
