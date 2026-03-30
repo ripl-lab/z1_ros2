@@ -128,6 +128,43 @@ TF chain the node expects:
 
 
 
+### Gripper control
+
+The `gripper_controller` (`position_controllers/GripperActionController`) is the default gripper controller used by MoveIt.
+It has **stall detection** enabled (`allow_stalling: true`) so that when the gripper closes on an object and cannot reach the target position, the action **succeeds** instead of hanging forever.
+This is essential for pick-and-place: MoveIt sends a "close" goal, the gripper stalls against the object, and the pipeline continues.
+
+A second controller, `gripper_effort_controller` (`effort_controllers/JointGroupEffortController`), is spawned **inactive** at launch and allows direct torque control of the gripper.
+This is useful for force-controlled grasping where you want to command a closing torque rather than a target position.
+
+The `gripper_control.py` example provides a tkinter GUI with:
+- A **position slider** that sends `GripperCommand` action goals (active in position mode)
+- An **effort slider** that publishes torque commands (active in effort mode)
+- A **mode switch** button that toggles between `gripper_controller` and `gripper_effort_controller` at runtime
+- **Live state** display showing the gripper's measured position, velocity, and effort
+
+```
+ros2 run z1_examples gripper_control.py
+```
+
+You can also switch controllers manually from the command line:
+```bash
+# Switch to effort control
+ros2 control switch_controllers \
+  --deactivate gripper_controller \
+  --activate gripper_effort_controller
+
+# Publish a closing torque
+ros2 topic pub /gripper_effort_controller/commands std_msgs/msg/Float64MultiArray "{data: [5.0]}"
+
+# Switch back to position control
+ros2 control switch_controllers \
+  --deactivate gripper_effort_controller \
+  --activate gripper_controller
+```
+
+> **Note:** While `gripper_effort_controller` is active, MoveIt cannot command the gripper (the position-based `gripper_controller` is inactive). Switch back to position mode before running MoveIt pick-and-place.
+
 ### Impedance control
 ```
 ros2 launch z1_bringup z1.launch.py starting_controller:=operational_impedance_controller sim_isaac:=true

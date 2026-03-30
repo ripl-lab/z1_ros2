@@ -19,6 +19,7 @@ install(
     ${PROJECT_NAME}/impedance_marker.py
     ${PROJECT_NAME}/controller_switcher.py
     ${PROJECT_NAME}/apriltag_localizer.py
+    ${PROJECT_NAME}/gripper_control.py
     DESTINATION 
     lib/${PROJECT_NAME}
 )

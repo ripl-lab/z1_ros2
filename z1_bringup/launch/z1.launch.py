@@ -131,6 +131,16 @@ def launch_setup(context, *args, **kwargs):
         condition=IfCondition(with_gripper),
     )
 
+    gripper_effort_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["gripper_effort_controller", "--inactive", "-c", "/controller_manager"],
+        parameters=[{
+            "use_sim_time": use_sim_time,
+        }],
+        condition=IfCondition(with_gripper),
+    )
+
     rviz_node = Node(
         package="rviz2",
         executable="rviz2",
@@ -151,6 +161,7 @@ def launch_setup(context, *args, **kwargs):
         joint_state_broadcaster_spawner,
         starting_controller_spawner,
         gripper_controller_spawner,
+        gripper_effort_controller_spawner,
         rviz_delayed,
     ]
 
