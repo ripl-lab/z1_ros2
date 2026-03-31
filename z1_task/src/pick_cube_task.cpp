@@ -138,6 +138,8 @@ int main(int argc, char** argv)
     auto lift_height     = node->declare_parameter<double>("lift_height", 0.30);
     auto place_offset_x  = node->declare_parameter<double>("place_offset_x", 0.0);
     auto place_offset_y  = node->declare_parameter<double>("place_offset_y", 0.15);
+    auto hover_clearance = node->declare_parameter<double>("hover_clearance", 0.10);
+    auto hover_x_retreat = node->declare_parameter<double>("hover_x_retreat", -0.03);
     auto place_lower     = node->declare_parameter<double>("place_lower_distance", 0.10);
 
     // Spin in background so TF and MoveIt callbacks are processed
@@ -180,6 +182,7 @@ int main(int argc, char** argv)
     // ── 2. Compute target poses from the tag TF ────────────────────────
     Eigen::Isometry3d tag_pose = tf2::transformToEigen(tag_tf);
     Eigen::Vector3d tag_pos = tag_pose.translation();
+    Eigen::Vector3d tag_x   = tag_pose.rotation().col(0);
     Eigen::Vector3d tag_z   = tag_pose.rotation().col(2);
 
     // EE orientation: rotate tag frame 90° around Y so the gripper
@@ -189,7 +192,18 @@ int main(int argc, char** argv)
     Eigen::Quaterniond ee_q = (tag_q * ry90).normalized();
 
     Eigen::Vector3d pre_grasp_pos = tag_pos + approach_offset * tag_z;
-    double approach_dist = approach_offset - grasp_offset;
+    Eigen::Vector3d grasp_pos     = tag_pos + grasp_offset * tag_z;
+
+    // Hover waypoint: directly above grasp but retreated along tag X,
+    // with at least hover_clearance world-Z above the grasp point.
+    double hover_z = std::max(grasp_pos.z() + hover_clearance, pre_grasp_pos.z());
+    Eigen::Vector3d hover_pos(
+        grasp_pos.x() + hover_x_retreat * tag_x.x(),
+        grasp_pos.y() + hover_x_retreat * tag_x.y(),
+        hover_z);
+
+    // Descent distance: from hover down to grasp along tag Z
+    double descend_dist = (hover_pos - grasp_pos).norm();
 
     Eigen::Vector3d place_above_pos(
         tag_pos.x() + place_offset_x,
@@ -200,12 +214,15 @@ int main(int argc, char** argv)
                 tag_pos.x(), tag_pos.y(), tag_pos.z());
     RCLCPP_INFO(log, "Pre-grasp   (%.3f, %.3f, %.3f)",
                 pre_grasp_pos.x(), pre_grasp_pos.y(), pre_grasp_pos.z());
+    RCLCPP_INFO(log, "Hover       (%.3f, %.3f, %.3f)",
+                hover_pos.x(), hover_pos.y(), hover_pos.z());
     RCLCPP_INFO(log, "Place-above (%.3f, %.3f, %.3f)",
                 place_above_pos.x(), place_above_pos.y(), place_above_pos.z());
-    RCLCPP_INFO(log, "Approach dist: %.3f m   Lift: %.3f m",
-                approach_dist, lift_height);
+    RCLCPP_INFO(log, "Descend dist: %.3f m   Lift: %.3f m",
+                descend_dist, lift_height);
 
     auto pre_grasp_msg = make_pose(pre_grasp_pos, ee_q, WORLD_FRAME);
+    auto hover_msg     = make_pose(hover_pos, ee_q, WORLD_FRAME);
     auto place_msg     = make_pose(place_above_pos, ee_q, WORLD_FRAME);
 
     // ── 3. Build MTC task ───────────────────────────────────────────────
@@ -232,8 +249,10 @@ int main(int argc, char** argv)
 
     add_arm_pose_move(task, "pre-grasp", ompl, pre_grasp_msg);
 
+    add_arm_pose_move(task, "hover", ompl, hover_msg);
+
     add_cartesian_move(task, "descend", cartesian,
-                       -tag_z, approach_dist * 0.8, approach_dist);
+                       -tag_z, descend_dist * 0.8, descend_dist);
 
     add_gripper_move(task, "close gripper", joint_interp, "closed");
 
