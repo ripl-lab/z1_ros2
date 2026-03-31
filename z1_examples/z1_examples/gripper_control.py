@@ -184,13 +184,13 @@ class GripperGUI:
         # Title
         ttk.Label(
             main, text="Z1 Gripper Control", style="Title.TLabel",
-        ).pack(**pad, pady=(8, 2))
+        ).pack(padx=pad["padx"], pady=(8, 2))
 
         ttk.Separator(main).pack(fill="x", **pad)
 
         # ── Mode indicator + switch button ────────────────────────────────
         mode_frame = ttk.Frame(main, style="Dark.TFrame")
-        mode_frame.pack(fill="x", **pad, pady=(6, 2))
+        mode_frame.pack(fill="x", padx=pad["padx"], pady=(6, 2))
 
         ttk.Label(
             mode_frame, text="Mode:", style="Dark.TLabel",
@@ -201,13 +201,19 @@ class GripperGUI:
         )
         self._mode_label.pack(side="left", padx=(6, 16))
 
-        self._switch_btn = ttk.Button(
-            mode_frame, text="Switch to Effort",
-            style="Switch.TButton", command=self._on_mode_switch,
+        self._switch_pos_btn = ttk.Button(
+            mode_frame, text="Position",
+            style="Switch.TButton", command=lambda: self._on_mode_switch("position"),
         )
-        self._switch_btn.pack(side="right")
+        self._switch_pos_btn.pack(side="right", padx=(4, 0))
+        
+        self._switch_eff_btn = ttk.Button(
+            mode_frame, text="Effort",
+            style="Switch.TButton", command=lambda: self._on_mode_switch("effort"),
+        )
+        self._switch_eff_btn.pack(side="right")
 
-        ttk.Separator(main).pack(fill="x", **pad, pady=(6, 2))
+        ttk.Separator(main).pack(fill="x", padx=pad["padx"], pady=(6, 2))
 
         # ── Live state ────────────────────────────────────────────────────
         state_frame = ttk.Frame(main, style="Dark.TFrame")
@@ -239,7 +245,7 @@ class GripperGUI:
         self._vel_val.grid(row=2, column=1, sticky="w", padx=(8, 0))
         self._eff_val.grid(row=3, column=1, sticky="w", padx=(8, 0))
 
-        ttk.Separator(main).pack(fill="x", **pad, pady=(6, 2))
+        ttk.Separator(main).pack(fill="x", padx=pad["padx"], pady=(6, 2))
 
         # ── Position slider ───────────────────────────────────────────────
         pos_frame = ttk.Frame(main, style="Dark.TFrame")
@@ -279,7 +285,7 @@ class GripperGUI:
             range_frame, text=f"{POS_MAX:.2f} (closed)", style="Dark.TLabel",
         ).pack(side="right")
 
-        ttk.Separator(main).pack(fill="x", **pad, pady=(6, 2))
+        ttk.Separator(main).pack(fill="x", padx=pad["padx"], pady=(6, 2))
 
         # ── Effort slider ─────────────────────────────────────────────────
         eff_frame = ttk.Frame(main, style="Dark.TFrame")
@@ -341,16 +347,18 @@ class GripperGUI:
 
     def _on_eff_slider(self, val):
         self._eff_cmd_label.configure(text=f"{float(val):.4f} Nm")
+        self.node.send_eff(float(val))
 
     # ── Mode switching ────────────────────────────────────────────────────
 
-    def _on_mode_switch(self):
-        if self._switching:
+    def _on_mode_switch(self, target_mode: str):
+        if self._switching or self.mode == target_mode:
             return
         self._switching = True
-        self._switch_btn.configure(state="disabled")
+        self._switch_pos_btn.configure(state="disabled")
+        self._switch_eff_btn.configure(state="disabled")
 
-        if self.mode == "position":
+        if target_mode == "effort":
             self.node.switch(
                 EFF_CTRL, POS_CTRL,
                 callback=lambda ok: self.root.after(
@@ -367,7 +375,8 @@ class GripperGUI:
 
     def _finish_switch(self, new_mode: str, ok: bool):
         self._switching = False
-        self._switch_btn.configure(state="normal")
+        self._switch_pos_btn.configure(state="normal")
+        self._switch_eff_btn.configure(state="normal")
         if not ok:
             self.node.get_logger().error("Controller switch failed")
             return
@@ -375,7 +384,6 @@ class GripperGUI:
         self.mode = new_mode
         if self.mode == "position":
             self._mode_label.configure(text="POSITION", style="Mode.TLabel")
-            self._switch_btn.configure(text="Switch to Effort")
             self._pos_slider.configure(state="normal", fg=FG)
             self._eff_slider.configure(state="disabled", fg=DISABLED_FG)
             # Send position goal at the current gripper position so
@@ -385,7 +393,6 @@ class GripperGUI:
             self.node.send_pos(pos)
         else:
             self._mode_label.configure(text="EFFORT", style="ModeEff.TLabel")
-            self._switch_btn.configure(text="Switch to Position")
             self._pos_slider.configure(state="disabled", fg=DISABLED_FG)
             self._eff_slider.configure(state="normal", fg=FG)
             self._eff_slider.set(0.0)

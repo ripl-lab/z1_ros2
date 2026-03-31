@@ -96,9 +96,9 @@ HardwareInterface::on_configure(const rclcpp_lifecycle::State& prev_state) {
 
     // Set command to current state
     _arm_cmd.q      = _arm_state.q;
-    _arm_cmd.qd     = _arm_state.qd;
+    _arm_cmd.qd     = Vec6::Zero();
     _gripper_cmd.q  = _gripper_state.q;
-    _gripper_cmd.qd = _gripper_state.qd;
+    _gripper_cmd.qd = 0.0;
     _arm->setArmCmd(_arm_state.q, _arm_state.qd);
     _arm->setFsm(UNITREE_ARM::ArmFSMState::LOWCMD);
     RCLCPP_INFO(get_logger(), "SDK switch to low-level control!");
@@ -237,8 +237,7 @@ HardwareInterface::export_command_interfaces() {
 hardware_interface::return_type
 HardwareInterface::
         read(const rclcpp::Time& /* time */, const rclcpp::Duration& /* period */) {
-    // sendRecvThread already runs sendRecv() at 500 Hz in the background;
-    // just copy the latest state without an extra blocking UDP round-trip.
+    _arm->sendRecv();
     for (long i = 0; i < 6; ++i) {
         _arm_state.q(i)   = _arm->lowstate->q[i];
         _arm_state.qd(i)  = _arm->lowstate->dq[i];
@@ -258,8 +257,7 @@ HardwareInterface::
     saturate_torque();
     _arm->setArmCmd(_arm_cmd.q, _arm_cmd.qd, _arm_cmd.tau);
     _arm->setGripperCmd(_gripper_cmd.q, _gripper_cmd.qd, _gripper_cmd.tau);
-    // sendRecvThread picks up the commands set above at 500 Hz;
-    // no need for a blocking sendRecv() here.
+    _arm->sendRecv();
     return hardware_interface::return_type::OK;
 }
 
@@ -320,9 +318,9 @@ HardwareInterface::perform_command_mode_switch(
 
     // Set command to current state
     _arm_cmd.q      = _arm_state.q;
-    _arm_cmd.qd     = _arm_state.qd;
+    _arm_cmd.qd     = Vec6::Zero();
     _gripper_cmd.q  = _gripper_state.q;
-    _gripper_cmd.qd = _gripper_state.qd;
+    _gripper_cmd.qd = 0.0;
 
     return hardware_interface::return_type::OK;
 }

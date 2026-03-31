@@ -117,6 +117,9 @@ ros2 run z1_examples apriltag_localizer.py --ros-args \
   -p observed_tag_frame:=apriltag_69 \
   -p camera_frame:=Camera_OmniVision_OV9782_Color
 ```
+```
+ros2 launch z1_examples pick_cube.launch.py sim_isaac:=true sim_ignition:=false
+```
 
 `publish_child_frame` defaults to `camera_frame` (omit it when you only need `world` → camera). Set `publish_child_frame` separately if you publish `world` → some other frame under the camera (e.g. `base_link`).
 
@@ -200,7 +203,13 @@ ros2 param set /cartesian_impedance_controller delta_tau_max 5.0
 ```
 ```
 ros2 launch z1_bringup z1.launch.py starting_controller:=cartesian_impedance_controller sim_isaac:=true
+ros2 launch z1_bringup z1.launch.py starting_controller:=cartesian_impedance_controller sim_ignition:=false
+
 ```
+```
+ros2 run z1_examples impedance_marker.py --ros-args -p standalone:=true -p controller:=cartesian_impedance_controller
+```
+
 ```
 ros2 topic pub --once /cartesian_impedance_controller/reference_pose \
   geometry_msgs/msg/PoseStamped \
@@ -246,3 +255,15 @@ If the ROS 2 controller (like `joint_trajectory_controller`) is configured to on
 When a controller claims multiple interfaces (e.g., `position` and `velocity`), `ros2_control` passes them to the hardware interface's `perform_command_mode_switch` sequentially (e.g., `"joint1/position"`, then `"joint1/velocity"`). 
 If the hardware interface processes these sequentially in a loop and blindly applies gains, a later interface can overwrite the gains of an earlier one. For example, processing `velocity` might set `Kp = 0.0`, overwriting the `Kp` set by the `position` interface just a microsecond earlier, causing the arm to go limp and drop.
 **Fix:** Decouple the parsing of claimed interfaces from the application of gains. Gather all claimed interfaces first, then apply gains based on priority (e.g., if `position` is claimed at all, keep `Kp` active).
+
+### 3. Manual `sendRecv()` Required in the Hardware Interface Read/Write Loop
+
+The Z1 SDK provides a background thread (`sendRecvThread`) that calls `unitreeArm::sendRecv()` at 500 Hz. It might seem redundant to also call `_arm->sendRecv()` manually inside the `ros2_control` `read()` and `write()` methods — but **removing those calls causes joint 4 to overheat**.
+
+The reason is a subtle interaction between `sendRecvThread` and `setArmCmd()`. The SDK's `unitreeArm::sendRecv()` doesn't just perform the UDP exchange; it also copies the **unitreeArm-level** command fields (`arm.q`, `arm.qd`, `arm.tau`) into `lowcmd` before sending. The hardware interface only calls `setArmCmd()` (which writes directly to `lowcmd`) and never updates those unitreeArm-level fields. So the background thread's `sendRecv()` periodically **overwrites** our commands in `lowcmd` with stale values (zeros or the position captured at startup), and those stale values are what actually get sent to the arm over UDP.
+
+With the manual `sendRecv()` calls in `read()` and `write()`, our correct commands reach the arm at least part of the time (the manual call fires immediately after `setArmCmd()`, before the background thread can clobber `lowcmd`). Without them, the arm only ever receives stale targets and the PD controller generates sustained corrective torques, overheating the thermally weakest motor (joint 4).
+
+The SDK's own `lowcmd_development.cpp` example shows the intended LOWCMD pattern: **shut down `sendRecvThread`**, then run a manual loop calling `setArmCmd()` + `sendRecv()`. The proper long-term fix is to either:
+1. Shut down `sendRecvThread` after entering `LOWCMD` mode (restart it only for FSM transitions like `backToStart()`), or
+2. Keep `sendRecvThread` running but also update `_arm->q`, `_arm->qd`, `_arm->tau` alongside `setArmCmd()` so the background thread sends consistent values.

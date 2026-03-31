@@ -43,6 +43,8 @@ SWITCHABLE = [
     ("joint_trajectory_controller", "Joint Trajectory (MoveIt)"),
     ("cartesian_impedance_controller", "Cartesian Impedance"),
     ("operational_impedance_controller", "Operational Impedance"),
+    ("position_controller", "Joint Position"),
+    ("torque_controller", "Joint Effort"),
 ]
 
 

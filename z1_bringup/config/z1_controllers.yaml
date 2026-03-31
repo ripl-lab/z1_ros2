@@ -113,9 +113,9 @@ cartesian_impedance_controller:
 
     # Cartesian stiffness [N/m] for translation, [Nm/rad] for rotation
     stiffness:
-      translation_x: 200.0
-      translation_y: 200.0
-      translation_z: 200.0
+      translation_x: 50.0
+      translation_y: 50.0
+      translation_z: 50.0
       rotation_x: 50.0
       rotation_y: 50.0
       rotation_z: 50.0
