@@ -16,6 +16,6 @@
         pose_estimation_method: "pnp"
 
         tag:
-            ids: [69]
-            frames: [apriltag_69]
-            sizes: [0.08]
+            ids: [69, 21]
+            frames: [apriltag_69, apriltag_21]
+            sizes: [0.08, 0.032]

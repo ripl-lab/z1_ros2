@@ -106,9 +106,6 @@ ros2 run apriltag_ros apriltag_node --ros-args \
   --params-file $(ros2 pkg prefix z1_examples)/share/z1_examples/config/apriltag.yaml
 ```
 
-```
-ros2 topic echo /apriltag/detections --once
-```
 
 ```
 ros2 run z1_examples apriltag_localizer.py --ros-args \
@@ -116,6 +113,11 @@ ros2 run z1_examples apriltag_localizer.py --ros-args \
   -p landmark_frame:=apriltag_69_landmark \
   -p observed_tag_frame:=apriltag_69 \
   -p camera_frame:=Camera_OmniVision_OV9782_Color
+```
+
+
+```
+ros2 topic echo /apriltag/detections --once
 ```
 ```
 ros2 launch z1_examples pick_cube.launch.py sim_isaac:=true sim_ignition:=false

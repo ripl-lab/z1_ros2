@@ -20,6 +20,7 @@ install(
     ${PROJECT_NAME}/controller_switcher.py
     ${PROJECT_NAME}/apriltag_localizer.py
     ${PROJECT_NAME}/gripper_control.py
+    ${PROJECT_NAME}/pick_cube.py
     DESTINATION 
     lib/${PROJECT_NAME}
 )
