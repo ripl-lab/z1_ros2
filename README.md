@@ -121,6 +121,8 @@ ros2 topic echo /apriltag/detections --once
 ```
 ```
 ros2 launch z1_examples pick_cube.launch.py sim_isaac:=true sim_ignition:=false
+ros2 launch z1_task pick_cube_task.launch.py sim_isaac:=true sim_ignition:=false approach_offset_x:=-0.03 grasp_offset:=0.12
+ros2 launch z1_task pick_cube_task_MTC.launch.py sim_isaac:=true sim_ignition:=false approach_offset_x:=-0.03 grasp_offset:=0.12
 ```
 
 `publish_child_frame` defaults to `camera_frame` (omit it when you only need `world` → camera). Set `publish_child_frame` separately if you publish `world` → some other frame under the camera (e.g. `base_link`).

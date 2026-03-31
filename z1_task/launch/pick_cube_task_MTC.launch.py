@@ -10,9 +10,9 @@ from launch.actions import (
 from launch.substitutions import LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
-from launch_ros.substitutions import FindPackageShare
 from ament_index_python.packages import get_package_share_path
 from moveit_configs_utils import MoveItConfigsBuilder
+from moveit_configs_utils.launches import generate_move_group_launch
 
 
 def launch_setup(context, *args, **kwargs):
@@ -30,16 +30,45 @@ def launch_setup(context, *args, **kwargs):
     if sim_isaac == "true":
         sim_ignition = "false"
 
-    # ── MoveIt stack (bringup + move_group + rviz) via z1_moveit ──────
-    moveit_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            FindPackageShare("z1_moveit"), "/launch/z1_moveit.launch.py"
-        ]),
+    use_sim_time = sim_ignition == "true" or sim_isaac == "true"
+
+    # ── Bringup (controllers, robot_state_publisher, sim) ────────────────
+    bringup = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                str(get_package_share_path("z1_bringup")),
+                "launch",
+                "z1.launch.py",
+            )
+        ),
         launch_arguments={
             "sim_ignition": sim_ignition,
             "sim_isaac": sim_isaac,
-            "rviz": "true",
+            "rviz": "false",
+            "starting_controller": "joint_trajectory_controller",
         }.items(),
+    )
+
+    # ── MoveIt + MTC ExecuteTaskSolution capability ──────────────────────
+    moveit_config = MoveItConfigsBuilder(
+        "z1_description", package_name="z1_moveit"
+    ).to_moveit_configs()
+    moveit_config.trajectory_execution["use_sim_time"] = use_sim_time
+    moveit_config.move_group_capabilities["capabilities"] = (
+        "move_group/ExecuteTaskSolutionCapability"
+    )
+
+    move_group = generate_move_group_launch(moveit_config)
+
+    # ── RViz ─────────────────────────────────────────────────────────────
+    rviz = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                str(get_package_share_path("z1_moveit")),
+                "launch",
+                "moveit_rviz.launch.py",
+            )
+        ),
     )
 
     # ── AprilTag detector ────────────────────────────────────────────────
@@ -72,19 +101,34 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
-    # ── MoveIt config for MoveGroupInterface in the pick node ─────────
-    moveit_config = MoveItConfigsBuilder(
-        "z1_description", package_name="z1_moveit"
-    ).to_moveit_configs()
+    # ── MTC pick-and-place node ──────────────────────────────────────────
     moveit_config_dict = moveit_config.to_dict()
+    if "planning_pipelines" in moveit_config_dict:
+        moveit_config_dict["planning_pipelines.pipeline_names"] = moveit_config_dict[
+            "planning_pipelines"
+        ]
 
-    pick_node = TimerAction(
+    moveit_config_dict.update(
+        {
+            "planning_scene_monitor_options": {
+                "name": "planning_scene_monitor",
+                "robot_description": "robot_description",
+                "joint_state_topic": "/joint_states",
+                "attached_collision_object_topic": "/moveit_cpp/planning_scene_monitor",
+                "publish_planning_scene_topic": "/moveit_cpp/publish_planning_scene",
+                "monitored_planning_scene_topic": "/moveit_cpp/monitored_planning_scene",
+                "wait_for_initial_state_timeout": 10.0,
+            },
+        }
+    )
+
+    mtc_node = TimerAction(
         period=12.0,
         actions=[
             Node(
                 name="z1_pick_cube",
                 package="z1_task",
-                executable="pick_cube_task",
+                executable="pick_cube_task_MTC",
                 output="screen",
                 parameters=[
                     moveit_config_dict,
@@ -99,7 +143,7 @@ def launch_setup(context, *args, **kwargs):
         ],
     )
 
-    return [moveit_launch, apriltag_node, localizer_node, pick_node]
+    return [bringup, move_group, rviz, apriltag_node, localizer_node, mtc_node]
 
 
 def generate_launch_description():
