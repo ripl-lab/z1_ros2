@@ -22,6 +22,11 @@ def launch_setup(context, *args, **kwargs):
     camera_info_topic = LaunchConfiguration("camera_info_topic").perform(context)
     camera_frame = LaunchConfiguration("camera_frame").perform(context)
 
+    grasp_offset = LaunchConfiguration("grasp_offset")
+    approach_offset_x = LaunchConfiguration("approach_offset_x")
+    approach_offset_y = LaunchConfiguration("approach_offset_y")
+    approach_offset_z = LaunchConfiguration("approach_offset_z")
+
     if sim_isaac == "true":
         sim_ignition = "false"
 
@@ -32,7 +37,8 @@ def launch_setup(context, *args, **kwargs):
         PythonLaunchDescriptionSource(
             os.path.join(
                 str(get_package_share_path("z1_bringup")),
-                "launch", "z1.launch.py",
+                "launch",
+                "z1.launch.py",
             )
         ),
         launch_arguments={
@@ -48,8 +54,9 @@ def launch_setup(context, *args, **kwargs):
         "z1_description", package_name="z1_moveit"
     ).to_moveit_configs()
     moveit_config.trajectory_execution["use_sim_time"] = use_sim_time
-    moveit_config.move_group_capabilities["capabilities"] = \
+    moveit_config.move_group_capabilities["capabilities"] = (
         "move_group/ExecuteTaskSolutionCapability"
+    )
 
     move_group = generate_move_group_launch(moveit_config)
 
@@ -58,7 +65,8 @@ def launch_setup(context, *args, **kwargs):
         PythonLaunchDescriptionSource(
             os.path.join(
                 str(get_package_share_path("z1_moveit")),
-                "launch", "moveit_rviz.launch.py",
+                "launch",
+                "moveit_rviz.launch.py",
             )
         ),
     )
@@ -82,32 +90,37 @@ def launch_setup(context, *args, **kwargs):
     localizer_node = Node(
         package="z1_examples",
         executable="apriltag_localizer.py",
-        parameters=[{
-            "world_frame": "world",
-            "landmark_frame": "apriltag_69_landmark",
-            "observed_tag_frame": "apriltag_69",
-            "camera_frame": camera_frame,
-        }],
+        parameters=[
+            {
+                "world_frame": "world",
+                "landmark_frame": "apriltag_69_landmark",
+                "observed_tag_frame": "apriltag_69",
+                "camera_frame": camera_frame,
+            }
+        ],
         output="screen",
     )
 
     # ── MTC pick-and-place node ──────────────────────────────────────────
     moveit_config_dict = moveit_config.to_dict()
     if "planning_pipelines" in moveit_config_dict:
-        moveit_config_dict["planning_pipelines.pipeline_names"] = \
-            moveit_config_dict["planning_pipelines"]
+        moveit_config_dict["planning_pipelines.pipeline_names"] = moveit_config_dict[
+            "planning_pipelines"
+        ]
 
-    moveit_config_dict.update({
-        "planning_scene_monitor_options": {
-            "name": "planning_scene_monitor",
-            "robot_description": "robot_description",
-            "joint_state_topic": "/joint_states",
-            "attached_collision_object_topic": "/moveit_cpp/planning_scene_monitor",
-            "publish_planning_scene_topic": "/moveit_cpp/publish_planning_scene",
-            "monitored_planning_scene_topic": "/moveit_cpp/monitored_planning_scene",
-            "wait_for_initial_state_timeout": 10.0,
-        },
-    })
+    moveit_config_dict.update(
+        {
+            "planning_scene_monitor_options": {
+                "name": "planning_scene_monitor",
+                "robot_description": "robot_description",
+                "joint_state_topic": "/joint_states",
+                "attached_collision_object_topic": "/moveit_cpp/planning_scene_monitor",
+                "publish_planning_scene_topic": "/moveit_cpp/publish_planning_scene",
+                "monitored_planning_scene_topic": "/moveit_cpp/monitored_planning_scene",
+                "wait_for_initial_state_timeout": 10.0,
+            },
+        }
+    )
 
     mtc_node = TimerAction(
         period=12.0,
@@ -117,7 +130,15 @@ def launch_setup(context, *args, **kwargs):
                 package="z1_task",
                 executable="pick_cube_task",
                 output="screen",
-                parameters=[moveit_config_dict],
+                parameters=[
+                    moveit_config_dict,
+                    {
+                        "grasp_offset": grasp_offset,
+                        "approach_offset_x": approach_offset_x,
+                        "approach_offset_y": approach_offset_y,
+                        "approach_offset_z": approach_offset_z,
+                    },
+                ],
             ),
         ],
     )
@@ -126,27 +147,53 @@ def launch_setup(context, *args, **kwargs):
 
 
 def generate_launch_description():
-    return LaunchDescription([
-        DeclareLaunchArgument(
-            "sim_ignition", default_value="true",
-            description="Use Ignition Gazebo simulation",
-        ),
-        DeclareLaunchArgument(
-            "sim_isaac", default_value="false",
-            description="Use Isaac Sim as physics backend",
-        ),
-        DeclareLaunchArgument(
-            "image_topic", default_value="/rgb",
-            description="Raw image topic for AprilTag detection",
-        ),
-        DeclareLaunchArgument(
-            "camera_info_topic", default_value="/camera_info",
-            description="Camera info topic for AprilTag detection",
-        ),
-        DeclareLaunchArgument(
-            "camera_frame",
-            default_value="Camera_OmniVision_OV9782_Color",
-            description="Camera TF frame name",
-        ),
-        OpaqueFunction(function=launch_setup),
-    ])
+    return LaunchDescription(
+        [
+            DeclareLaunchArgument(
+                "sim_ignition",
+                default_value="true",
+                description="Use Ignition Gazebo simulation",
+            ),
+            DeclareLaunchArgument(
+                "sim_isaac",
+                default_value="false",
+                description="Use Isaac Sim as physics backend",
+            ),
+            DeclareLaunchArgument(
+                "image_topic",
+                default_value="/rgb",
+                description="Raw image topic for AprilTag detection",
+            ),
+            DeclareLaunchArgument(
+                "camera_info_topic",
+                default_value="/camera_info",
+                description="Camera info topic for AprilTag detection",
+            ),
+            DeclareLaunchArgument(
+                "camera_frame",
+                default_value="Camera_OmniVision_OV9782_Color",
+                description="Camera TF frame name",
+            ),
+            DeclareLaunchArgument(
+                "grasp_offset",
+                default_value="0.135",
+                description="Z offset for grasping",
+            ),
+            DeclareLaunchArgument(
+                "approach_offset_x",
+                default_value="0.0",
+                description="Approach offset along tag X axis (meters)",
+            ),
+            DeclareLaunchArgument(
+                "approach_offset_y",
+                default_value="0.0",
+                description="Approach offset along tag Y axis (meters)",
+            ),
+            DeclareLaunchArgument(
+                "approach_offset_z",
+                default_value="0.25",
+                description="Approach offset along tag Z axis (meters)",
+            ),
+            OpaqueFunction(function=launch_setup),
+        ]
+    )
