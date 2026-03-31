@@ -214,7 +214,7 @@ int main(int argc, char **argv) {
   auto place_offset_y =
       node->declare_parameter<double>("place_offset_y", 0.15);
   auto place_lower =
-      node->declare_parameter<double>("place_lower_distance", 0.10);
+      node->declare_parameter<double>("place_lower_distance", 0.03);
   auto vel_scale = node->declare_parameter<double>("velocity_scaling", 0.5);
   auto accel_scale =
       node->declare_parameter<double>("acceleration_scaling", 0.5);
