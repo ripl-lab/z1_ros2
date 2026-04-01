@@ -319,6 +319,13 @@
             </inertial>
         </link>
 
+        <joint name="gripperTip_joint" type="fixed">
+            <origin rpy="0 0 0" xyz="0.099 0.0 0.0"/>
+            <parent link="gripperStator"/>
+            <child link="gripperTip"/>
+        </joint>
+        <link name="gripperTip"/>
+
         <gazebo reference="gripperStator">
             <self_collide>true</self_collide>
         </gazebo>

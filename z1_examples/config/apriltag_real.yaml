@@ -1,0 +1,30 @@
+/**:
+    ros__parameters:
+        image_transport: raw
+        family: 36h11
+        # size: 0.05              # 10 cm tag edge size in meters
+        max_hamming: 0
+
+        detector:
+            threads: 1
+            decimate: 1.0 # full resolution for better detection
+            blur: 0.0
+            refine: True
+            sharpening: 0.25
+            debug: False
+
+        pose_estimation_method: "pnp"
+
+        tag:
+            ids: [0, 1, 2, 3, 4,69,70]
+            frames:
+                [
+                    apriltag_0,
+                    apriltag_1,
+                    apriltag_2,
+                    apriltag_3,
+                    apriltag_4,
+                    apriltag_69,
+                    apriltag_70,
+                ]
+            sizes: [0.04, 0.08, 0.08, 0.08, 0.08,0.04,0.04]

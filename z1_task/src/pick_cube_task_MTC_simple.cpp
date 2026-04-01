@@ -33,6 +33,7 @@
 #include <moveit_task_constructor_msgs/msg/solution.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
+#include <sstream>
 #include <tf2_eigen/tf2_eigen.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/buffer.h>
@@ -47,6 +48,13 @@ const std::string GRIPPER_GROUP = "gripper";
 const std::string EE_FRAME = "link06";
 const std::string EE_NAME = "gripper_ee";
 const std::string WORLD_FRAME = "world";
+
+// Offset from link06 to gripperTip (0.051 gripperStator + 0.099 gripperTip)
+const Eigen::Isometry3d TIP_OFFSET = [] {
+  Eigen::Isometry3d t = Eigen::Isometry3d::Identity();
+  t.translation() = Eigen::Vector3d(0.15, 0.0, 0.0);
+  return t;
+}();
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -68,7 +76,7 @@ void add_cartesian_move(
     const Eigen::Vector3d &direction, double min_dist, double max_dist) {
   auto stage = std::make_unique<mtc::stages::MoveRelative>(name, planner);
   stage->setGroup(ARM_GROUP);
-  stage->setIKFrame(Eigen::Isometry3d::Identity(), EE_FRAME);
+  stage->setIKFrame(TIP_OFFSET, EE_FRAME);
 
   geometry_msgs::msg::Vector3Stamped vec;
   vec.header.frame_id = WORLD_FRAME;
@@ -106,8 +114,8 @@ void add_arm_pose_move(
     const geometry_msgs::msg::PoseStamped &target) {
   auto stage = std::make_unique<mtc::stages::MoveTo>(name, planner);
   stage->setGroup(ARM_GROUP);
+  stage->setIKFrame(TIP_OFFSET, EE_FRAME);
   stage->setGoal(target);
-  stage->setIKFrame(Eigen::Isometry3d::Identity(), EE_FRAME);
   task.add(std::move(stage));
 }
 
@@ -122,8 +130,7 @@ int main(int argc, char **argv) {
   auto log = node->get_logger();
 
   // ── Parameters ──────────────────────────────────────────────────────
-  auto tag_frame =
-      node->declare_parameter<std::string>("tag_frame", "apriltag_21");
+  auto tag_frame = node->get_parameter("tag_frame").as_string();
   auto approach_offset_x = node->get_parameter("approach_offset_x").as_double();
   auto approach_offset_y = node->get_parameter("approach_offset_y").as_double();
   auto approach_offset_z = node->get_parameter("approach_offset_z").as_double();
@@ -133,6 +140,8 @@ int main(int argc, char **argv) {
   auto place_offset_y = node->declare_parameter<double>("place_offset_y", 0.15);
   auto place_lower =
       node->declare_parameter<double>("place_lower_distance", 0.10);
+  auto goal_joint_tolerance =
+      node->get_parameter("goal_joint_tolerance").as_double();
 
   // Spin in background so TF and MoveIt callbacks are processed
   rclcpp::executors::MultiThreadedExecutor executor;
@@ -178,8 +187,9 @@ int main(int argc, char **argv) {
   Eigen::Vector3d tag_y = tag_pose.rotation().col(1);
   Eigen::Vector3d tag_z = tag_pose.rotation().col(2);
 
-  // EE orientation: rotate tag frame 90° around Y so the gripper
-  // (which extends along EE X) points toward the tag surface (-tag Z).
+  // EE orientation: rotate tag frame 90° around local Y so that
+  // gripper X (extension axis) aligns with -tag Z (into the tag surface).
+  // Result: EE_X = -tag_Z, EE_Y = tag_Y, EE_Z = tag_X.
   Eigen::Quaterniond tag_q(tag_pose.rotation());
   Eigen::Quaterniond ry90(
       Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitY()));
@@ -206,8 +216,10 @@ int main(int argc, char **argv) {
               grasp_pos.y(), grasp_pos.z());
   RCLCPP_INFO(log, "Place-above (%.3f, %.3f, %.3f)", place_above_pos.x(),
               place_above_pos.y(), place_above_pos.z());
-  RCLCPP_INFO(log, "Descend dist: %.3f m   Lift: %.3f m", descend_dist,
-              lift_height);
+  RCLCPP_INFO(log, "EE orient    quat(w=%.3f, x=%.3f, y=%.3f, z=%.3f)",
+              ee_q.w(), ee_q.x(), ee_q.y(), ee_q.z());
+  RCLCPP_INFO(log, "Descend dist: %.3f m   Lift: %.3f m   Joint tol: %.3f rad",
+              descend_dist, lift_height, goal_joint_tolerance);
 
   auto approach_msg = make_pose(approach_pos, ee_q, WORLD_FRAME);
   auto place_msg = make_pose(place_above_pos, ee_q, WORLD_FRAME);
@@ -221,8 +233,12 @@ int main(int argc, char **argv) {
   task.setProperty("eef", EE_NAME);
   task.setProperty("ik_frame", EE_FRAME);
 
+  auto max_solutions = node->declare_parameter<int>("max_solutions", 10);
+
   // Planners
   auto ompl = std::make_shared<mtc::solvers::PipelinePlanner>(node);
+  ompl->setProperty("num_planning_attempts", 10u);
+  ompl->setProperty("goal_joint_tolerance", goal_joint_tolerance);
   auto cartesian = std::make_shared<mtc::solvers::CartesianPath>();
   cartesian->setStepSize(0.005);
   cartesian->setMaxVelocityScalingFactor(0.5);
@@ -273,16 +289,32 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  RCLCPP_INFO(log, "Planning (up to 5 solutions) ...");
-  if (!task.plan(5)) {
-    RCLCPP_ERROR(log, "Planning failed");
+  RCLCPP_INFO(log, "Planning (up to %ld solutions) ...", max_solutions);
+  if (!task.plan(max_solutions)) {
+    RCLCPP_ERROR(log, "Planning failed – no solutions found");
+    RCLCPP_ERROR(log, "Target poses that failed:");
+    RCLCPP_ERROR(log,
+                 "  Approach  pos(%.3f, %.3f, %.3f) quat(w=%.3f, x=%.3f, "
+                 "y=%.3f, z=%.3f)",
+                 approach_pos.x(), approach_pos.y(), approach_pos.z(), ee_q.w(),
+                 ee_q.x(), ee_q.y(), ee_q.z());
+    RCLCPP_ERROR(log,
+                 "  Place     pos(%.3f, %.3f, %.3f) quat(w=%.3f, x=%.3f, "
+                 "y=%.3f, z=%.3f)",
+                 place_above_pos.x(), place_above_pos.y(), place_above_pos.z(),
+                 ee_q.w(), ee_q.x(), ee_q.y(), ee_q.z());
+    RCLCPP_ERROR(log, "  Goal joint tolerance: %.3f rad", goal_joint_tolerance);
+    double dist_from_base = approach_pos.norm();
+    RCLCPP_ERROR(log, "  Approach distance from base: %.3f m", dist_from_base);
+    std::ostringstream oss;
+    task.printState(oss);
+    RCLCPP_ERROR_STREAM(log, "Stage-by-stage status:\n" << oss.str());
     rclcpp::shutdown();
     spin_thread.join();
     return 1;
   }
 
-  auto &solution = *task.solutions().front();
-  task.introspection().publishSolution(solution);
+  RCLCPP_INFO(log, "Found %zu solutions", task.solutions().size());
 
   // ── 5. Execute via direct controller calls ──────────────────────────
   // Isaac Sim's JTC does not report goal completion back to move_group,
@@ -313,90 +345,105 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  moveit_task_constructor_msgs::msg::Solution sol_msg;
-  solution.toMsg(sol_msg);
+  bool executed = false;
+  int sol_idx = 0;
 
-  RCLCPP_INFO(log, "Executing %zu sub-trajectories ...",
-              sol_msg.sub_trajectory.size());
+  for (const auto &solution_ptr : task.solutions()) {
+    sol_idx++;
+    auto &solution = *solution_ptr;
+    task.introspection().publishSolution(solution);
 
-  rclcpp_action::ClientGoalHandle<JTC>::SharedPtr active_jtc_handle;
-  int step = 0;
-  bool ok = true;
+    moveit_task_constructor_msgs::msg::Solution sol_msg;
+    solution.toMsg(sol_msg);
 
-  for (const auto &sub : sol_msg.sub_trajectory) {
-    if (!rclcpp::ok()) {
-      ok = false;
+    RCLCPP_INFO(log, "Trying solution %d/%zu (%zu sub-trajectories) ...",
+                sol_idx, task.solutions().size(),
+                sol_msg.sub_trajectory.size());
+
+    rclcpp_action::ClientGoalHandle<JTC>::SharedPtr active_jtc_handle;
+    int step = 0;
+    bool ok = true;
+
+    for (const auto &sub : sol_msg.sub_trajectory) {
+      if (!rclcpp::ok()) {
+        ok = false;
+        break;
+      }
+
+      auto &jt = sub.trajectory.joint_trajectory;
+      if (jt.joint_names.empty() || jt.points.empty())
+        continue;
+      step++;
+
+      bool is_gripper =
+          (jt.joint_names.size() == 1 && jt.joint_names[0] == "jointGripper");
+
+      if (is_gripper) {
+        double target = jt.points.back().positions[0];
+        RCLCPP_INFO(log, "[%d] Gripper -> %.3f rad", step, target);
+
+        Grip::Goal goal;
+        goal.command.position = target;
+        goal.command.max_effort = grip_effort;
+
+        auto future = grip_client->async_send_goal(goal);
+        if (future.wait_for(std::chrono::seconds(3)) !=
+                std::future_status::ready ||
+            !future.get()) {
+          RCLCPP_ERROR(log, "[%d] Gripper goal rejected", step);
+          ok = false;
+          break;
+        }
+        RCLCPP_INFO(log, "[%d] Gripper goal accepted", step);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+      } else {
+        if (active_jtc_handle) {
+          jtc_client->async_cancel_goal(active_jtc_handle);
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+        double duration = 0.0;
+        if (!jt.points.empty()) {
+          auto &t = jt.points.back().time_from_start;
+          duration = t.sec + t.nanosec * 1e-9;
+        }
+        RCLCPP_INFO(log, "[%d] Arm trajectory (%zu pts, %.1f s)", step,
+                    jt.points.size(), duration);
+
+        JTC::Goal goal;
+        goal.trajectory = jt;
+
+        auto future = jtc_client->async_send_goal(goal);
+        if (future.wait_for(std::chrono::seconds(5)) !=
+                std::future_status::ready ||
+            !future.get()) {
+          RCLCPP_ERROR(log, "[%d] JTC goal rejected", step);
+          ok = false;
+          break;
+        }
+        active_jtc_handle = future.get();
+        RCLCPP_INFO(log, "[%d] JTC goal accepted, waiting %.1f s", step,
+                    std::max(duration + 1.0, settle));
+        std::this_thread::sleep_for(
+            std::chrono::duration<double>(std::max(duration + 1.0, settle)));
+      }
+    }
+
+    if (ok) {
+      RCLCPP_INFO(log, "Pick and place complete (solution %d)!", sol_idx);
+      executed = true;
       break;
     }
-
-    auto &jt = sub.trajectory.joint_trajectory;
-    if (jt.joint_names.empty() || jt.points.empty())
-      continue;
-    step++;
-
-    bool is_gripper =
-        (jt.joint_names.size() == 1 && jt.joint_names[0] == "jointGripper");
-
-    if (is_gripper) {
-      double target = jt.points.back().positions[0];
-      RCLCPP_INFO(log, "[%d] Gripper -> %.3f rad", step, target);
-
-      Grip::Goal goal;
-      goal.command.position = target;
-      goal.command.max_effort = grip_effort;
-
-      auto future = grip_client->async_send_goal(goal);
-      if (future.wait_for(std::chrono::seconds(3)) !=
-              std::future_status::ready ||
-          !future.get()) {
-        RCLCPP_ERROR(log, "[%d] Gripper goal rejected", step);
-        ok = false;
-        break;
-      }
-      RCLCPP_INFO(log, "[%d] Gripper goal accepted", step);
-      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    } else {
-      // Cancel any lingering JTC goal before sending a new one
-      if (active_jtc_handle) {
-        jtc_client->async_cancel_goal(active_jtc_handle);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      }
-
-      double duration = 0.0;
-      if (!jt.points.empty()) {
-        auto &t = jt.points.back().time_from_start;
-        duration = t.sec + t.nanosec * 1e-9;
-      }
-      RCLCPP_INFO(log, "[%d] Arm trajectory (%zu pts, %.1f s)", step,
-                  jt.points.size(), duration);
-
-      JTC::Goal goal;
-      goal.trajectory = jt;
-
-      auto future = jtc_client->async_send_goal(goal);
-      if (future.wait_for(std::chrono::seconds(5)) !=
-              std::future_status::ready ||
-          !future.get()) {
-        RCLCPP_ERROR(log, "[%d] JTC goal rejected", step);
-        ok = false;
-        break;
-      }
-      active_jtc_handle = future.get();
-      RCLCPP_INFO(log, "[%d] JTC goal accepted, waiting %.1f s", step,
-                  std::max(duration + 1.0, settle));
-      std::this_thread::sleep_for(
-          std::chrono::duration<double>(std::max(duration + 1.0, settle)));
-    }
+    RCLCPP_WARN(log, "Solution %d failed at step %d, trying next ...", sol_idx,
+                step);
   }
 
-  if (ok) {
-    RCLCPP_INFO(log, "Pick and place complete!");
-  } else {
-    RCLCPP_ERROR(log, "Execution aborted at step %d", step);
+  if (!executed) {
+    RCLCPP_ERROR(log, "All %d solutions failed during execution", sol_idx);
   }
 
   std::this_thread::sleep_for(std::chrono::seconds(1));
   rclcpp::shutdown();
   spin_thread.join();
-  return ok ? 0 : 1;
+  return executed ? 0 : 1;
 }

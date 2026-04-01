@@ -45,7 +45,27 @@ ament_target_dependencies(pick_cube_task_MTC
   moveit_msgs
 )
 
-install(TARGETS pick_cube_task pick_cube_task_MTC
+# ── MTC simple version (flat pipeline, direct controller execution) ──────
+add_executable(pick_cube_task_MTC_simple src/pick_cube_task_MTC_simple.cpp)
+ament_target_dependencies(pick_cube_task_MTC_simple
+  rclcpp
+  rclcpp_action
+  moveit_task_constructor_core
+  control_msgs
+  tf2_ros
+  tf2_eigen
+  tf2_geometry_msgs
+  geometry_msgs
+  moveit_msgs
+)
+
+install(TARGETS pick_cube_task pick_cube_task_MTC pick_cube_task_MTC_simple
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(PROGRAMS
+  scripts/task_sequencer.py
+  scripts/pick_cube_pinocchio.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

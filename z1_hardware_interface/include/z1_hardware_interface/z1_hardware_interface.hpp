@@ -109,7 +109,7 @@ private:
 
     struct GainsData {
         std::vector<double> kp = {20.0, 30.0, 30.0, 20.0, 15.0, 10.0, 20.0};
-        std::vector<double> kd = {2000, 2000, 2000, 2000, 2000, 2000, 2000};
+        std::vector<double> kd = {2000, 2000, 2000, 1000, 1000, 2000, 2000};
 
     };
 

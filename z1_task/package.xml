@@ -20,11 +20,19 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>moveit_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>shape_msgs</depend>
+  <depend>trajectory_msgs</depend>
 
+  <exec_depend>rclpy</exec_depend>
   <exec_depend>z1_moveit</exec_depend>
   <exec_depend>z1_bringup</exec_depend>
   <exec_depend>z1_examples</exec_depend>
   <exec_depend>moveit_task_constructor_capabilities</exec_depend>
+
+  <!-- Pinocchio pick-and-place (pick_cube_pinocchio.py) -->
+  <!-- <exec_depend>sensor_msgs</exec_depend> -->
+  <exec_depend>std_msgs</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

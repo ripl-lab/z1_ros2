@@ -124,6 +124,10 @@ ros2 launch z1_examples pick_cube.launch.py sim_isaac:=true sim_ignition:=false
 ros2 launch z1_task pick_cube_task.launch.py sim_isaac:=true sim_ignition:=false approach_offset_x:=-0.03 grasp_offset:=0.12
 ros2 launch z1_task pick_cube_task_MTC.launch.py sim_isaac:=true sim_ignition:=false approach_offset_x:=-0.03 grasp_offset:=0.12
 ```
+
+
+
+### REAL SIM
 ```
 ros2 launch z1_task pick_cube_task_MTC.launch.py \
   sim_ignition:=false \
@@ -139,15 +143,48 @@ ros2 launch realsense2_camera rs_launch.py
 ros2 run apriltag_ros apriltag_node --ros-args \
   -r image_rect:=/camera/camera/color/image_raw \
   -r camera_info:=/camera/camera/color/camera_info \
-  --params-file $(ros2 pkg prefix z1_examples)/share/z1_examples/config/apriltag.yaml
+  --params-file $(ros2 pkg prefix z1_examples)/share/z1_examples/config/apriltag_real.yaml
 ```
 ```
 ros2 run z1_examples apriltag_localizer.py --ros-args \
   -p world_frame:=world \
-  -p landmark_frame:=apriltag_69_landmark \
-  -p observed_tag_frame:=apriltag_69 \
+  -p landmark_frame:=apriltag_0_landmark \
+  -p observed_tag_frame:=apriltag_0 \
   -p camera_frame:=camera_color_optical_frame
 ```
+```
+ros2 run tf2_ros static_transform_publisher 0.0 0.18 0.0 0.0 0.0 0.0 world apriltag_0_landmark
+```
+
+### REAL SIM SIMPLE
+```
+ros2 launch z1_task pick_cube_task_MTC_simple.launch.py \
+  sim_ignition:=false \
+  sim_isaac:=false \
+  image_topic:=/camera/camera/color/image_raw \
+  camera_info_topic:=/camera/camera/color/camera_info \
+  camera_frame:=camera_color_optical_frame \
+  landmark_frame:=apriltag_4_landmark \
+  observed_tag_frame:=apriltag_4 \
+  tag_frame:=apriltag_0 \
+  goal_orientation_tolerance:=0.5
+```
+
+### ISAAC SIM SIMPLE
+```
+ros2 launch z1_task pick_cube_task_MTC_simple.launch.py \
+  sim_ignition:=false \
+  sim_isaac:=true \
+  image_topic:=/rgb \
+  camera_info_topic:=/camera_info \
+  camera_frame:=Camera_OmniVision_OV9782_Color \
+  landmark_frame:=apriltag_69_landmark \
+  observed_tag_frame:=apriltag_69 \
+  tag_frame:=apriltag_21 \
+  goal_orientation_tolerance:=0.5
+```
+
+
 
 `publish_child_frame` defaults to `camera_frame` (omit it when you only need `world` → camera). Set `publish_child_frame` separately if you publish `world` → some other frame under the camera (e.g. `base_link`).
 
