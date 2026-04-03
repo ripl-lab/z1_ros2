@@ -41,6 +41,76 @@ This repository contains different sub-packages:
 For more information for each package, please refer to the corresponding `README`.
 
 
+## Architecture
+
+The diagram below shows the full command chain from a MoveIt motion plan down to the physical motors, and which software component owns each layer.
+
+```
+ ┌─────────────────────────────────────────────────────────────────┐
+ │  YOUR APPLICATION  (MoveIt, Python, MTC, RViz, CLI)             │
+ └──────────────────────┬──────────────────────────────────────────┘
+                        │ ROS2 action: /move_group
+                        ▼
+ ┌─────────────────────────────────────────────────────────────────┐
+ │  MOVE_GROUP NODE  (MoveIt2)                                     │
+ │                                                                 │
+ │  1. IK solver (KDL)  — Cartesian pose → joint-space goal        │
+ │  2. OMPL planner     — collision-free path in joint space       │
+ │  3. Time parameterization — velocity/accel limits → trajectory  │
+ └──────────────────────┬──────────────────────────────────────────┘
+                        │ ROS2 action: FollowJointTrajectory
+                        │ payload: trajectory_msgs/JointTrajectory
+                        ▼
+ ┌─────────────────────────────────────────────────────────────────┐
+ │  JOINT_TRAJECTORY_CONTROLLER  (ros2_controllers, 500 Hz)        │
+ │                                                                 │
+ │  Interpolates between waypoints each cycle, writes per-joint    │
+ │  position + velocity to ros2_control command interfaces.        │
+ └──────────────────────┬──────────────────────────────────────────┘
+                        │ command interfaces (double* in shared memory)
+                        ▼
+ ┌─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+ │  Z1_HARDWARE_INTERFACE  (ros2_control plugin, this repo)        │
+ │                                                                 │
+ │  Uses z1_sdk (libZ1_SDK.so):                                    │
+ │    unitreeArm _arm                                              │
+ │    write(): setArmCmd(q,qd,tau) → lowcmd, then sendRecv() UDP  │
+ │    read():  sendRecv() UDP, then lowstate → state interfaces    │
+ └─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┬─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+                         │ UDP (LowlevelCmd: q, qd, tau, kp, kd)
+                         ▼
+ ┌─────────────────────────────────────────────────────────────────┐
+ │  Z1_CTRL  (Unitree daemon, from z1_controller / libZ1.so)      │
+ │                                                                 │
+ │  FSM state: State_LowCmd                                        │
+ │  PD control law:  τ = Kp·(q_cmd − q) + Kd·(qd_cmd − qd) + τ  │
+ └──────────────────────┬──────────────────────────────────────────┘
+                        │ CAN bus / proprietary protocol
+                        ▼
+ ┌─────────────────────────────────────────────────────────────────┐
+ │  MOTOR CONTROLLERS  (6 joints + gripper)                        │
+ └─────────────────────────────────────────────────────────────────┘
+```
+
+**Process layout (real hardware):**
+
+```
+ ros2_control_node process              z1_ctrl process
+ ┌──────────────────────┐              ┌──────────────────────┐
+ │ z1_hardware_interface │    UDP       │ main.cpp             │
+ │   links:              │             │   links:             │
+ │   libZ1_SDK.so ───────┼────────────►│   libZ1.so           │
+ │   (client)            │◄────────────┼   (server + motors)  │
+ └──────────────────────┘              └──────────────────────┘
+```
+
+- **z1_sdk** (`libZ1_SDK.so`) — Unitree's client library. Provides the `unitreeArm` class, `LowlevelCmd`/`LowlevelState` structs, UDP serialization, `ArmModel` (kinematics/dynamics). Used inside the ros2_control_node process.
+- **z1_controller** (`libZ1.so` + `z1_ctrl` binary) — Unitree's control daemon. Runs as a separate process, receives `lowcmd` over UDP, executes the PD servo loop, and talks to the physical motors.
+- **z1_hardware_interface** — This repo's ros2_control plugin that bridges ROS2 controllers to the Unitree SDK.
+
+Both Unitree libraries are closed-source (headers + prebuilt `.so`); they are fetched automatically at build time via CMake `FetchContent`.
+
+
 ## Robot in action
 
 To get started with the Z1 manipulator in the simulation environment, you may call
@@ -332,3 +402,68 @@ With the manual `sendRecv()` calls in `read()` and `write()`, our correct comman
 The SDK's own `lowcmd_development.cpp` example shows the intended LOWCMD pattern: **shut down `sendRecvThread`**, then run a manual loop calling `setArmCmd()` + `sendRecv()`. The proper long-term fix is to either:
 1. Shut down `sendRecvThread` after entering `LOWCMD` mode (restart it only for FSM transitions like `backToStart()`), or
 2. Keep `sendRecvThread` running but also update `_arm->q`, `_arm->qd`, `_arm->tau` alongside `setArmCmd()` so the background thread sends consistent values.
+
+### 4. "Startup Position = Home" — sendRecvThread Clobbering Joint Commands
+
+**Symptom:** When the Z1 is powered on, the hardware interface treats whatever angle it starts at as "home". All subsequent ROS 2 commands (MoveIt goals, trajectory controller targets) appear to work relative to the startup position rather than in absolute joint coordinates. The arm either drifts back toward the startup pose or only partially follows commanded trajectories.
+
+**Root cause:** This is a direct consequence of problem #3 above, but manifests as a positioning/calibration problem rather than overheating. The `unitreeArm` class has two layers of command storage:
+
+- **unitreeArm-level fields:** `_arm->q`, `_arm->qd`, `_arm->tau`, `_arm->gripperQ`, `_arm->gripperW`, `_arm->gripperTau` (member variables on the `unitreeArm` object)
+- **lowcmd fields:** `_arm->lowcmd->q`, etc. (the actual UDP command buffer sent to `z1_ctrl`)
+
+The key to understanding this bug is that **every** call to `unitreeArm::sendRecv()` — whether from our code or the background thread — does two things in sequence:
+
+1. **Copies** `_arm->q` → `lowcmd->q` (overwrites the UDP buffer with the member field)
+2. **Sends** `lowcmd` over UDP to `z1_ctrl`
+
+There is **one** `lowcmd` buffer shared between two concurrent writers:
+
+- **Thread A** (ros2_control `write()` at 500 Hz): calls `setArmCmd()` which writes the correct ROS 2 target into `lowcmd`, then calls `sendRecv()`.
+- **Thread B** (`sendRecvThread` at 500 Hz): calls `sendRecv()` on its own schedule.
+
+The race looks like this:
+
+```
+Thread A (write):                        Thread B (sendRecvThread):
+
+setArmCmd(correct_target)
+  → lowcmd = [correct, e.g. 1.0 rad]
+                                         sendRecv():
+                                           step 1: lowcmd = _arm->q = [stale, 0.0]
+                                           step 2: UDP send(lowcmd) → z1_ctrl gets 0.0  ✗
+sendRecv():
+  step 1: lowcmd = _arm->q = [stale, 0.0]
+  step 2: UDP send(lowcmd) → z1_ctrl gets 0.0  ✗
+```
+
+The correct value written by `setArmCmd()` survives in `lowcmd` for microseconds before the next `sendRecv()` — from either thread — stomps it with `_arm->q`. Since the hardware interface never updated `_arm->q`, it still holds the startup position. **Every single UDP send delivers the stale startup position, not the commanded target.**
+
+In `LOWCMD` mode, `z1_ctrl` directly applies these `lowcmd` values via its PD control law (`τ = Kp·(q_cmd − q) + Kd·(qd_cmd − qd) + τ`). So the motors are constantly driven toward the startup position, and the arm appears to treat its power-on pose as "home".
+
+**Why the standalone z1_sdk demos don't have this problem:**
+
+The SDK examples use three strategies that all avoid the clobbering:
+
+1. **High-level FSM commands** (`MoveJ`, `backToStart`, `labelRun`): These trigger FSM state transitions in `z1_ctrl`. In states like `MOVEJ` or `BACKTOSTART`, `z1_ctrl` generates motor commands internally from its own trajectory planner and **ignores** the `lowcmd` arriving over SDK UDP. The background thread's clobbering is irrelevant because `z1_ctrl` isn't using those values.
+
+2. **Shut down `sendRecvThread`** (`lowcmd_development.cpp`, `lowcmd_multirobots.cpp`): These examples call `sendRecvThread->shutdown()` before entering the manual control loop, eliminating the clobbering source entirely. Only the explicit `setArmCmd()` + `sendRecv()` calls in the loop send commands.
+
+3. **Keep `_arm->q` in sync** (`highcmd_development.cpp`): The example calls `startTrack(JOINTCTRL)` which initializes `_arm->q = lowstate->getQ()`, then updates `arm.q` every iteration in the control loop. The background thread copies the correct (current) value because the user-facing field is always up to date.
+
+**Fix:** In `write()`, sync the unitreeArm-level fields before calling `setArmCmd()`:
+
+```cpp
+_arm->q   = _arm_cmd.q;
+_arm->qd  = _arm_cmd.qd;
+_arm->tau  = _arm_cmd.tau;
+_arm->gripperQ   = _gripper_cmd.q;
+_arm->gripperW   = _gripper_cmd.qd;
+_arm->gripperTau = _gripper_cmd.tau;
+
+_arm->setArmCmd(_arm_cmd.q, _arm_cmd.qd, _arm_cmd.tau);
+_arm->setGripperCmd(_gripper_cmd.q, _gripper_cmd.qd, _gripper_cmd.tau);
+_arm->sendRecv();
+```
+
+Now all three senders (write, read, background thread) transmit consistent commands. The background thread copies `_arm->q` into `lowcmd`, but since `_arm->q` now matches what `setArmCmd()` wrote, the clobbering produces the same correct value.

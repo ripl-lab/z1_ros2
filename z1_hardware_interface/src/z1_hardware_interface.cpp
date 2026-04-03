@@ -255,6 +255,17 @@ hardware_interface::return_type
 HardwareInterface::
         write(const rclcpp::Time& /* time */, const rclcpp::Duration& /* period */) {
     saturate_torque();
+
+    // Keep unitreeArm-level fields in sync so the background sendRecvThread
+    // (which copies these into lowcmd before each UDP send) doesn't clobber
+    // our commands with stale startup values.
+    _arm->q   = _arm_cmd.q;
+    _arm->qd  = _arm_cmd.qd;
+    _arm->tau  = _arm_cmd.tau;
+    _arm->gripperQ   = _gripper_cmd.q;
+    _arm->gripperW   = _gripper_cmd.qd;
+    _arm->gripperTau = _gripper_cmd.tau;
+
     _arm->setArmCmd(_arm_cmd.q, _arm_cmd.qd, _arm_cmd.tau);
     _arm->setGripperCmd(_gripper_cmd.q, _gripper_cmd.qd, _gripper_cmd.tau);
     _arm->sendRecv();
