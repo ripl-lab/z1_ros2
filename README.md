@@ -2,9 +2,6 @@
 
 This is a community-driven package that enable the [Z1 Manipulator](https://shop.unitree.com/products/unitree-z1) from [Unitree](https://www.unitree.com/) to work in ROS2.
 
-[![Humble CI](https://github.com/idra-lab/z1_ros2/actions/workflows/humble.yml/badge.svg)](https://github.com/idra-lab/z1_ros2/actions/workflows/humble.yml)
-[![Jazzy CI](https://github.com/idra-lab/z1_ros2/actions/workflows/jazzy.yml/badge.svg)](https://github.com/idra-lab/z1_ros2/actions/workflows/jazzy.yml) 
-[![Rolling CI](https://github.com/idra-lab/z1_ros2/actions/workflows/rolling.yml/badge.svg)](https://github.com/idra-lab/z1_ros2/actions/workflows/rolling.yml)
 
 ## Quick Start
 
@@ -19,13 +16,26 @@ All external dependencies can be installed with [`rosdep`](https://wiki.ros.org/
 rosdep update
 rosdep install --from-paths ~/ros2_ws/src --ignore-src
 ```
-Make sure that you sourced the ROS2 global workspace (`source /opt/ros/humble/setup.bash`) and then  simply build the workspace as:
+Make sure that you sourced the ROS2 global workspace (`source /opt/ros/jazzy/setup.bash`) and then  simply build the workspace as:
 ``` bash
 cd ~/ros2_ws
 colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 Finally, make sure to source also the built workspace (`source ~/ros2_ws/install/setup.bash`).
 
+Test whether ROS can see packages 
+``` bash
+ros2 pkg list | grep z1
+```
+
+As ROS2 Humble uses an older version of gazebo vs Gazebo Sim used by ROS2 Jazzy the following must be installed for control 
+``` bash
+sudo apt update
+sudo apt install ros-jazzy-ros-gz-bridge 
+sudo apt install ros-jazzy-gz-ros2-control  
+sudo apt install ros-jazzy-ros-gz-sim  
+sudo apt install ros-jazzy-gz-ros2-control-demos 
+```
 
 ## ROS2 packages
 
@@ -44,15 +54,24 @@ For more information for each package, please refer to the corresponding `README
 ## Robot in action
 
 To get started with the Z1 manipulator in the simulation environment, you may call
-```
-ros2 launch z1_bringup z1.launch.py starting_controller:=joint_trajectory_controller
-```
-This make sure to launch the robot with the [`joint_trajectory_controller`](https://control.ros.org/rolling/doc/ros2_controllers/joint_trajectory_controller/doc/userdoc.html), which provide a simple motion planning facility. 
 
-To test the proper functionality, we can use the [`waypoint_test.py`](./z1_examples/z1_examples/waypoint_test.py) script to send a default plan as follows:
+**Terminal 1:** Syncronizes clock between Gazebo Sim and Rviz
+```
+ros2 run ros_gz_bridge parameter_bridge /clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock 
+```
+**Terminal 2:** Runs the simulator: Gazebo Sim and Rviz
+```
+export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:~/ros2_ws/install/z1_description/share
+
+ros2 launch z1_bringup z1.launch.py starting_controller:=joint_trajectory_controller use_sim_time:=true 
+```
+This make sure to launch the robot with the [`joint_trajectory_controller`](https://control.ros.org/rolling/doc/ros2_controllers/joint_trajectory_controller/doc/userdoc.html), which provide a simple motion planning facility. Also ['use_sim_time:=true'] is added for the clock synchronization.
+
+**Terminal 3:** Test functionality via [`waypoint_test.py`](./z1_examples/z1_examples/waypoint_test.py) script to send a default plan
 ```
 ros2 run z1_examples waypoint_test.py
 ```
+
 The outcome of the simulation shall be the following:
 
 ![](/docs/resources/gazebo-waypoint-example.gif)
