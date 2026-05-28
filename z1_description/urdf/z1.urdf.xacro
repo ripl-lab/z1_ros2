@@ -7,6 +7,9 @@
     <xacro:arg name="controllers" default="$(find z1_bringup)/config/z1_controllers.yaml" />
     <xacro:arg name="sim_ignition" default="true" />
     <xacro:arg name="with_gripper" default="true" />
+    <xacro:arg name="with_camera" default="false" />
+
+    <xacro:include filename="$(find realsense2_description)/urdf/_d435i.urdf.xacro"/>
 
     <xacro:include filename="$(find z1_description)/urdf/const.xacro" />
     <xacro:include filename="$(find z1_description)/urdf/z1.ros2_control.xacro" />
@@ -345,5 +348,30 @@
         prefix="$(arg prefix)"
         sim_ignition="$(arg sim_ignition)"
         with_gripper="$(arg with_gripper)" />
+
+    <xacro:if value="$(arg with_camera)">
+
+        <xacro:sensor_d435i 
+            parent="gripperStator"
+            name="camera"
+            use_nominal_extrinsics="true">
+            
+            <origin xyz="0.094 0 -0.056"
+                    rpy="0 0 0"/>
+
+        </xacro:sensor_d435i>
+    </xacro:if>
+
+    <xacro:unless value="$(arg with_camera)">
+        <!-- Dummy camera frame so TF tree stays valid -->
+        <joint name="camera_joint" type="fixed">
+            <parent link="gripperStator"/>
+            <child link="camera_link"/>
+            <origin xyz="0.094 0 0.055" rpy="0 0 0"/>
+        </joint>
+
+        <link name="camera_link"/>
+
+    </xacro:unless>
 
 </robot>

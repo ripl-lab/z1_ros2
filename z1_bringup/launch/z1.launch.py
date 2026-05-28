@@ -43,6 +43,7 @@ def launch_setup(context, *args, **kwargs):
     xacro_file = LaunchConfiguration("xacro_file")
     robot_name = LaunchConfiguration("robot_name")
     with_gripper = LaunchConfiguration("with_gripper")
+    with_camera = LaunchConfiguration("with_camera")
     rviz = LaunchConfiguration("rviz")
     rviz_config = LaunchConfiguration("rviz_config")
     controller_config = LaunchConfiguration("controller_config")
@@ -70,6 +71,7 @@ def launch_setup(context, *args, **kwargs):
             "name": robot_name.perform(context),
             "prefix": "",
             "with_gripper": with_gripper.perform(context),
+            "with_camera": with_camera.perform(context),
             "controllers": controller_config.perform(context),
             "sim_ignition": sim_ignition.perform(context),
         }
@@ -228,9 +230,9 @@ def generate_launch_description():
 
     LIB_ENV_VAR = "IGN_GAZEBO_SYSTEM_PLUGIN_PATH"
     if LIB_ENV_VAR in os.environ:
-        os.environ[LIB_ENV_VAR] += ":/opt/ros/humble/lib"
+        os.environ[LIB_ENV_VAR] += ":/opt/ros/jazzy/lib"
     else:
-        os.environ[LIB_ENV_VAR] = "/opt/ros/humble/lib"
+        os.environ[LIB_ENV_VAR] = "/opt/ros/jazzy/lib"
 
     # --- Launch arguments
     declared_arguments.append(
@@ -259,6 +261,14 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "with_gripper", default_value="true", description="Use the gripper?"
+        )
+    )
+    
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "with_camera",
+            default_value="false",
+            description="Attach RealSense camera to gripper"
         )
     )
 
