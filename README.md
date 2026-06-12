@@ -8,7 +8,7 @@ This is a community-driven package that enable the [Z1 Manipulator](https://shop
 To use this package in ROS2, first clone this repository in a ROS2 workspace, e.g.:
 ``` bash
 mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
-git clone https://github.com/idra-lab/z1_ros2.git
+git clone https://github.com/ripl-lab/z1_ros2.git
 ```
 
 All external dependencies can be installed with [`rosdep`](https://wiki.ros.org/rosdep):
