@@ -322,7 +322,7 @@
         </link>
 
         <joint name="z1_tcp_joint" type="fixed">
-            <origin rpy="0 0 0" xyz="0.208 0.0 0.0" />
+            <origin rpy="0 0 0" xyz="0.140 0.0 0.0" />
             <parent link="gripperStator" />
             <child link="z1_tcp" />
         </joint>
