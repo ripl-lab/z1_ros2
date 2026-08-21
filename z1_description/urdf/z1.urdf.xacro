@@ -365,7 +365,7 @@
             name="camera"
             use_nominal_extrinsics="true">
             
-            <origin xyz="0.094 0 -0.056"
+            <origin xyz="0.94 0 -0.056"
                     rpy="0 0 0"/>
 
         </xacro:sensor_d435i>
